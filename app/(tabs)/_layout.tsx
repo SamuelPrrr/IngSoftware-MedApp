@@ -5,6 +5,8 @@ import { Platform } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
+import "../../global.css"
+
 export default function TabLayout() {
   const colorScheme = useColorScheme();
 
@@ -28,9 +30,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="profile/index"
         options={{
-          title: 'Profile',
+          title: 'Perfil',
         }}
       />
       <Tabs.Screen
