@@ -1,19 +1,13 @@
-import { Tabs } from 'expo-router';
+import { Tabs, Redirect} from 'expo-router';
 import React from 'react';
 import { Platform } from 'react-native';
 
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
 
-import "../../global.css"
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
         tabBarStyle: Platform.select({
           ios: {
@@ -24,21 +18,22 @@ export default function TabLayout() {
         }),
       }}>
       <Tabs.Screen
-        name="index"
+        name="book"
         options={{
-          title: 'Home',
+          title: 'Agendar',
         }}
       />
       <Tabs.Screen
-        name="profile/index"
+        name="profile"
         options={{
           title: 'Perfil',
+          headerShown : false
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="settings"
         options={{
-          title: 'Explore',
+          title: 'Ajustes',
         }}
       />
     </Tabs>

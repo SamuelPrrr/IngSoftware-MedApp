@@ -4,7 +4,7 @@ import { Link } from 'expo-router';
 export default function HomeScreen() {
   return (
     <View style={styles.container}>
-      <Text className='text-red-600'>¡Bienvenido a la pantalla de Inicio!</Text>
+      <Text className='text-red-600 font-black'>¡Bienvenido a la pantalla de Inicio!</Text>
     </View>
   );
 }
