@@ -49,7 +49,6 @@ export default function Index() {
           </Text>
         </View>
 
-        {/* Fila 3: Generación de fichas médicas */}
         <View className="flex-row items-center mb-7">
           <Image
             source={icons.ficha} 
