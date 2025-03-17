@@ -11,8 +11,16 @@ import logout from "../assets/icons/logout.png";
 import eyeHide from "../assets/icons/eye-hide.png";
 import eye from "../assets/icons/eye.png";
 import play from "../assets/icons/play.png";
+import logo from "../assets/icons/logo.png";
+import cardiograma from "../assets/icons/cardiograma.png";
+import citas from "../assets/icons/citas.png";
+import ficha from "../assets/icons/ficha.png";
+import profile2 from "../assets/icons/profile2.png";
+import notificacion from "../assets/icons/notificacion.png";
+import seguridad from "../assets/icons/seguridad.png";
 
 export default {
+  logo,
   play,
   bookmark,
   home,
@@ -26,4 +34,10 @@ export default {
   logout,
   eyeHide,
   eye,
+  cardiograma,
+  citas,
+  ficha,
+  profile2,
+  notificacion,
+  seguridad
 };
