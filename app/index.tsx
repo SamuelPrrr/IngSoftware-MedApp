@@ -1,7 +1,7 @@
 import React from 'react'
 import { StatusBar } from 'react-native';
 import {Text, View, Image } from 'react-native'
-import { Redirect, router, Router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView } from 'react-native';
 import { icons } from '../constants'; 
@@ -99,7 +99,7 @@ export default function Index() {
 
     <CustomButton 
       title = "Inicia sesión"
-      handlePress = { () => router.push('/(tabs)/profile')}
+      handlePress = { () => router.push('/(auth)/sign-in')}
       containerStyles="w-full mt-7"
     />
 
