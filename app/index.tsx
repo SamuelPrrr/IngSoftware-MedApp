@@ -1,11 +1,12 @@
 import React from 'react'
 import { StatusBar } from 'react-native';
 import {Text, View, Image } from 'react-native'
-import { Link, Redirect } from 'expo-router';
+import { Redirect, router, Router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView } from 'react-native';
 import { icons } from '../constants'; 
 import { useFonts } from 'expo-font'
+import CustomButton from '@/components/CustomButton';
 
 //Index que nos redirige a tabs, debido a que estamos usando Stacks
 export default function Index() {
@@ -15,7 +16,6 @@ export default function Index() {
     <ScrollView contentContainerStyle={{ height: '100%' }}>
 
       <View className='w-full items-center h-full px-4 pt-20'>
-
         <Image
           source={icons.logo} 
           className='w-[110px] h-[110px]'
@@ -85,7 +85,6 @@ export default function Index() {
           </Text>
         </View>
 
-        {/* Fila 6: Seguridad en tus datos */}
         <View className="flex-row items-center mb-7">
           <Image
             source={icons.seguridad} 
@@ -98,9 +97,17 @@ export default function Index() {
         </View>
     </View>
 
+    <CustomButton 
+      title = "Inicia sesión"
+      handlePress = { () => router.push('/(tabs)/profile')}
+      containerStyles="w-full mt-7"
+    />
+
       </View>
     </ScrollView>
-    <Link className='bg-secondary' href="/profile">Go</Link>
+
+    {/*Podemos aplicar opciones a nuestra status bar del celular*/}
+    <StatusBar backgroundColor={'#161622'}/>
   </SafeAreaView>
   );
 } 
