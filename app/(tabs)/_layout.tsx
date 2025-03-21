@@ -5,6 +5,7 @@ import { Text, View, Image } from 'react-native';
 import { icons } from '../../constants'; // Exportar los iconos por medio de sus definiciones en constants
 import tailwindConfig from '../../tailwind.config'; // Exportar los estilos configurados en tailwind
 
+
 // TypeScript es un lenguaje estáticamente tipado por lo cual tengo que definir los props
 type TabIconProps = {
   icon: ImageSourcePropType; // Tipo para la propiedad `icon`

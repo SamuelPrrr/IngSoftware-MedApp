@@ -102,7 +102,7 @@ export default function Index() {
       containerStyles="w-full mt-7"
     />
 
-      </View>
+    </View>
     </ScrollView>
 
     {/*Podemos aplicar opciones a nuestra status bar del celular*/}
