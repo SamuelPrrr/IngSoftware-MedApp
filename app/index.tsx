@@ -1,7 +1,7 @@
 import React from 'react'
 import { StatusBar } from 'react-native';
 import {Text, View, Image } from 'react-native'
-import { Redirect, router } from 'expo-router';
+import { Link, Redirect, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView } from 'react-native';
 import { icons } from '../constants'; 
@@ -102,6 +102,11 @@ export default function Index() {
       containerStyles="w-full mt-7"
     />
 
+      <View className='justify-center pt-5 flex-row gap-2'>
+        <Text className='text-lg text-gray-100 font-normal'>¿No tienes una cuenta?</Text>
+            <Link className='text-lg text-secondary font-normal' href={"/sign-up"}>Registrate</Link>
+        </View>
+    
     </View>
     </ScrollView>
 

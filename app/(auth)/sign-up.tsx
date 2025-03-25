@@ -23,12 +23,11 @@ const SignUp = () => {
     // Función para manejar el envío del formulario
     const submit = async () => {
         setIsSubmitting(true) // Indicamos que el formulario está siendo procesado
-        
         try {
             // Realizamos la solicitud POST al backend para registrar el nuevo usuario
             const response = await axios.post('http://localhost:8080/api/v1/usuario/register', {
                 nombre: form.nombre,  // Enviamos el nombre
-                //direccion: form.direccion, // Enviamos la dirección
+                direccion: form.direccion, // Enviamos la dirección
                 correo: form.email,  // Enviamos el correo
                 contraseña: form.password,  // Enviamos la contraseña
             })
@@ -38,12 +37,11 @@ const SignUp = () => {
                 Alert.alert('Error', response.data.message)  // Mostramos el mensaje de error
             } else {
                 // Si el registro fue exitoso, mostramos un mensaje de éxito
-                Alert.alert('Éxito', 'Usuario registrado correctamente')
+                Alert.alert('Bienvenido', 'Usuario registrado correctamente')
             }
         } catch (error) {
             console.error(error)
-            // En caso de error en la conexión con el backend, mostramos un mensaje de error
-            Alert.alert('Error', 'Hubo un problema con la conexión')
+            Alert.alert('Error', 'Verifica los campos o intentalo más tarde')
         } finally {
             setIsSubmitting(false) // Restablecemos el estado de envío del formulario
         }
@@ -68,6 +66,7 @@ const SignUp = () => {
                         value={form.nombre}
                         placeholder="Ingresa tu nombre"
                         handleChangeText={(e) => setForm({...form, nombre: e})}
+                        autoCapitalize='words'
                         otherStyles="mt-7"
                     />
 

@@ -2,17 +2,19 @@ import { View, Text, TextInput, TextInputProps, Pressable, TouchableOpacity, Ima
 import React, { useState} from 'react'
 import { icons } from '../constants'
 
-//Estudiar los componentes de esto
+//Define los datos, es una especie de constructor
 type FormFieldProps = {
     title: string;
     value: string;
-    placeholder?: string; // Hacer opcional
-    handleChangeText: (text: string) => void; // Corregir el nombre y el tipo
-    otherStyles?: string; // Hacer opcional
+    placeholder?: string; 
+    //Propiedad que hace una función callback que se pasa como prop al componente FormField
+    handleChangeText: (text: string) => void; 
+    otherStyles?: string; 
     keyboardType?: TextInputProps['keyboardType']; // Tipo correcto para keyboardType
+    autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters'; // Nueva prop
   };
 
-const FormField = ({title, value, placeholder, handleChangeText, otherStyles}: FormFieldProps) => {
+const FormField = ({title, value, placeholder, handleChangeText, otherStyles, autoCapitalize = 'none'}: FormFieldProps) => {
     const [showPassword, setShowPassword] = useState(false)
 
   return (
@@ -27,13 +29,14 @@ const FormField = ({title, value, placeholder, handleChangeText, otherStyles}: F
             placeholder={placeholder}
             placeholderTextColor={'#7b7b8b'}
             onChangeText={handleChangeText}
+            autoCapitalize={autoCapitalize} // Aplicamos la prop aquí
             secureTextEntry={title === 'Contraseña' && !showPassword } >
         </TextInput>
 
         {title ===  'Contraseña' && (
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
               <Image 
-                source={!showPassword ? icons.eye : icons.eyeHide} className='w-6 h-6' resizeMode='contain' 
+                source={!showPassword ? icons.eyeHide : icons.eye} className='w-6 h-6' resizeMode='contain' 
               />
           </TouchableOpacity>
         )}
