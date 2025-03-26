@@ -5,47 +5,52 @@ import { icons } from '../../constants'
 import FormField from '@/components/FormField'
 import CustomButton from '@/components/CustomButton'
 import { Link } from 'expo-router'
-import axios from 'axios' // Asegúrate de tener axios instalado
+import Checkbox from 'expo-checkbox'
+import axios from 'axios'
 
 const SignUp = () => {
-
-    // Estado local para almacenar los datos del formulario
     const [form, setForm] = useState({
         nombre: '',
-        direccion: '',
         email: '',
+        telefono: '',
+        sexo: '', 
         password: '',
     })
 
-    // Estado para controlar si el formulario está siendo enviado
     const [isSubmitting, setIsSubmitting] = useState(false)
 
-    // Función para manejar el envío del formulario
     const submit = async () => {
-        setIsSubmitting(true) // Indicamos que el formulario está siendo procesado
+        if (!form.sexo) {
+            Alert.alert('Error', 'Por favor selecciona tu género');
+            return;
+        }
+        
+        setIsSubmitting(true)
         try {
-            // Realizamos la solicitud POST al backend para registrar el nuevo usuario
-            const response = await axios.post('http://localhost:8080/api/v1/usuario/register', {
-                nombre: form.nombre,  // Enviamos el nombre
-                direccion: form.direccion, // Enviamos la dirección
-                correo: form.email,  // Enviamos el correo
-                contraseña: form.password,  // Enviamos la contraseña
+            const response = await axios.post('http://localhost:8080/api/pacientes', {
+                nombre: form.nombre,
+                correo: form.email,
+                password: form.password,
+                sexo: form.sexo,
+                telefono: form.telefono
             })
 
-            // Si el backend responde con un error (correo ya registrado)
             if (response.data.error) {
-                Alert.alert('Error', response.data.message)  // Mostramos el mensaje de error
+                Alert.alert('Error', response.data.message)
             } else {
-                // Si el registro fue exitoso, mostramos un mensaje de éxito
                 Alert.alert('Bienvenido', 'Usuario registrado correctamente')
             }
         } catch (error) {
             console.error(error)
             Alert.alert('Error', 'Verifica los campos o intentalo más tarde')
         } finally {
-            setIsSubmitting(false) // Restablecemos el estado de envío del formulario
+            setIsSubmitting(false)
         }
     }
+
+    const handleGenderChange = (gender: string) => {
+        setForm({...form, sexo: gender});
+    };
 
     return (
         <SafeAreaView className='bg-primary h-full'>
@@ -60,21 +65,12 @@ const SignUp = () => {
                 <View className='w-full h-full px-10'>
                     <Text className='text-2xl text-white font-semibold mt-10'>Registrarse</Text>
 
-                    {/*Formulario de registro*/}
                     <FormField
                         title="Nombre"
                         value={form.nombre}
                         placeholder="Ingresa tu nombre"
                         handleChangeText={(e) => setForm({...form, nombre: e})}
                         autoCapitalize='words'
-                        otherStyles="mt-7"
-                    />
-
-                    <FormField
-                        title="Dirección"
-                        value={form.direccion}
-                        placeholder="Ingresa tu dirección"
-                        handleChangeText={(e) => setForm({...form, direccion: e})}
                         otherStyles="mt-7"
                     />
 
@@ -88,6 +84,43 @@ const SignUp = () => {
                     />
 
                     <FormField
+                        title="Teléfono"
+                        value={form.telefono}
+                        placeholder="Ingresa tu número"
+                        handleChangeText={(e) => setForm({...form, telefono: e})}
+                        otherStyles="mt-7"
+                        keyboardType="phone-pad"
+                    />
+
+                    {/* Sección de Género con checkbox */}
+                    <View className='mt-7'>
+                        <Text className='text-base text-gray-100 font-medium'>Género</Text>
+                        <View className='flex-row mt-5 ml-12'>
+                            {/* Checkbox Masculino */}
+                            <View className='flex-row items-center mr-10'>
+                                <Checkbox
+                                    value={form.sexo === 'Masculino'}
+                                    onValueChange={() => handleGenderChange('Masculino')}
+                                    color={form.sexo === 'Masculino' ? '#1372DF' : undefined}
+                                    className='mr-2'
+                                />
+                                <Text className='text-base text-gray-100 font-medium'>Masculino</Text>
+                            </View>
+
+                            {/* Checkbox Femenino */}
+                            <View className='flex-row items-center'>
+                                <Checkbox
+                                    value={form.sexo === 'Femenino'}
+                                    onValueChange={() => handleGenderChange('Femenino')}
+                                    color={form.sexo === 'Femenino' ? '#1372DF' : undefined}
+                                    className='mr-2'
+                                />
+                                <Text className='text-base text-gray-100 font-medium'>Femenino</Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    <FormField
                         title="Contraseña"
                         value={form.password}
                         placeholder="Ingresa tu contraseña"
@@ -97,9 +130,9 @@ const SignUp = () => {
 
                     <CustomButton
                         title="Registrarse"
-                        handlePress={submit} // Al hacer clic en este botón, se ejecutará la función submit
+                        handlePress={submit}
                         containerStyles="w-full mt-10"
-                        isLoading={isSubmitting} // Muestra un indicador de carga mientras se envía el formulario
+                        isLoading={isSubmitting}
                     />
 
                     <View className='justify-center pt-5 flex-row gap-2'>
