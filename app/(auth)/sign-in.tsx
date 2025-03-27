@@ -1,34 +1,66 @@
-import { View, Text, Image, ScrollView, StatusBar } from 'react-native'
+import { View, Text, Image, ScrollView, StatusBar, Alert } from 'react-native'
 import React, { useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context' 
 import { icons } from '../../constants'; 
 import FormField from '@/components/FormField';
 import CustomButton from '@/components/CustomButton';
-import { Link, router } from 'expo-router';
-
+import { Link, useRouter } from 'expo-router';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { storeAuthToken } from '@/services/authStorage';
 
 const SignIn = () => {
 
-    //Estudiar snippets
   const [form, setForm] = useState({
     email: '',
     password: '',
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const router = useRouter();
 
-  const submit = () => {
+  const submit = async () => {
+    if (!form.email || !form.password) {
+      Alert.alert('Error', 'Por favor, ingresa todos los campos');
+      return;
+    }
 
-  }
+    setIsSubmitting(true);
+    try {
+      // Realiza la petición de login a tu backend
+      const response = await axios.post('http://localhost:8080/auth/login', {
+        correo: form.email,
+        password: form.password,
+      });
+
+      if (response.data.error) {
+        Alert.alert('Error', response.data.message);
+      } else {
+        // Guarda el token en AsyncStorage
+        const token = response.data.token;
+        await storeAuthToken(token);
+
+        await AsyncStorage.setItem('authToken', response.data.token);
+        // Redirige al usuario a la pantalla principal después del login
+        Alert.alert('Bienvenido', 'Inicio de sesión exitoso');
+        router.push('/(tabs)/profile'); // Redirige a la página principal o dashboard
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'Verifica los campos o intenta más tarde');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <SafeAreaView className='bg-primary h-full'>
       <ScrollView contentContainerStyle={{ height: '100%' }}>
         <View className='items-center'>
-        <Image
-                    source={icons.logo} 
-                    className='w-[110px] h-[110px]'
-                    resizeMode='contain'
+          <Image
+            source={icons.logo} 
+            className='w-[110px] h-[110px]'
+            resizeMode='contain'
           />
         </View>
         <View className='w-full h-full px-10'>
@@ -53,17 +85,17 @@ const SignIn = () => {
           />
 
           <CustomButton 
-            title = "Inicia sesión"
-            handlePress = { submit }
-            containerStyles ="w-full mt-10"
-            isLoading = {isSubmitting}
+            title="Inicia sesión"
+            handlePress={submit}
+            containerStyles="w-full mt-10"
+            isLoading={isSubmitting}
           />
 
           <View className='justify-center pt-5 flex-row gap-2'>
             <Text className='text-lg text-gray-100 font-normal'>
-               ¿No tienes una cuenta?
+              ¿No tienes una cuenta?
             </Text>
-            <Link className='text-lg text-secondary font-normal' href={"/sign-up"}>Registrate</Link>
+            <Link className='text-lg text-secondary font-normal' href={"/sign-up"}>Regístrate</Link>
           </View>
         </View>
       </ScrollView>
@@ -72,4 +104,4 @@ const SignIn = () => {
   )
 }
 
-export default SignIn
+export default SignIn;

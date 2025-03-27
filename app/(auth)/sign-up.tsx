@@ -4,9 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { icons } from '../../constants'
 import FormField from '@/components/FormField'
 import CustomButton from '@/components/CustomButton'
-import { Link } from 'expo-router'
+import { Link, router } from 'expo-router'
 import Checkbox from 'expo-checkbox'
 import axios from 'axios'
+import { storeAuthToken, getAuthToken, removeAuthToken } from '../../services/authStorage';  // Función para guardar el token
 
 const SignUp = () => {
     const [form, setForm] = useState({
@@ -27,7 +28,7 @@ const SignUp = () => {
         
         setIsSubmitting(true)
         try {
-            const response = await axios.post('http://localhost:8080/api/pacientes', {
+            const response = await axios.post('http://localhost:8080/auth/register', {
                 nombre: form.nombre,
                 correo: form.email,
                 password: form.password,
@@ -38,7 +39,14 @@ const SignUp = () => {
             if (response.data.error) {
                 Alert.alert('Error', response.data.message)
             } else {
-                Alert.alert('Bienvenido', 'Usuario registrado correctamente')
+
+                Alert.alert('Bienvenido', 'Usuario registrado correctamente',[
+                    {
+                    text: 'Iniciar sesión',
+                    onPress: () => router.push('/sign-in') // Redirige al usuario a la pantalla de inicio de sesión
+                    }
+                ]
+                )
             }
         } catch (error) {
             console.error(error)
