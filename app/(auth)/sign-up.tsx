@@ -7,7 +7,8 @@ import CustomButton from '@/components/CustomButton'
 import { Link, router } from 'expo-router'
 import Checkbox from 'expo-checkbox'
 import axios from 'axios'
-import { storeAuthToken, getAuthToken, removeAuthToken } from '../../services/authStorage';  // Función para guardar el token
+import { validateEmail, validatePassword, validatePhone } from '@/utils/validations'; 
+
 
 const SignUp = () => {
     const [form, setForm] = useState({

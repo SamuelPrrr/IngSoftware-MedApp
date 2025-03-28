@@ -6,8 +6,7 @@ import FormField from '@/components/FormField';
 import CustomButton from '@/components/CustomButton';
 import { Link, useRouter } from 'expo-router';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { storeAuthToken } from '@/services/authStorage';
+import { storeAuthToken }from '@/services/authStorage';
 
 const SignIn = () => {
 
@@ -36,11 +35,9 @@ const SignIn = () => {
       if (response.data.error) {
         Alert.alert('Error', response.data.message);
       } else {
-        // Guarda el token en AsyncStorage
-        const token = response.data.token;
-        await storeAuthToken(token);
-
-        await AsyncStorage.setItem('authToken', response.data.token);
+        // Guarda el token en AsyncStorage (Checar esto)
+        await storeAuthToken(response.data.token);
+        //await AsyncStorage.setItem('authToken', response.data.token);
         // Redirige al usuario a la pantalla principal después del login
         Alert.alert('Bienvenido', 'Inicio de sesión exitoso');
         router.push('/(tabs)/profile'); // Redirige a la página principal o dashboard
