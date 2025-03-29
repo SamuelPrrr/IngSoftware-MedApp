@@ -18,6 +18,13 @@ import ficha from "../assets/icons/ficha.png";
 import profile2 from "../assets/icons/profile2.png";
 import notificacion from "../assets/icons/notificacion.png";
 import seguridad from "../assets/icons/seguridad.png";
+import mail from "../assets/icons/mail.png";
+import foot from "../assets/icons/height.png";
+import date from "../assets/icons/date.png";
+import weight from "../assets/icons/weight.png";
+import male from "../assets/icons/male.png";
+import female from "../assets/icons/female.png";
+
 
 export default {
   logo,
@@ -39,5 +46,11 @@ export default {
   ficha,
   profile2,
   notificacion,
-  seguridad
+  seguridad,
+  mail,
+  foot,
+  date,
+  weight,
+  male,
+  female
 };

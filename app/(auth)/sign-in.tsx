@@ -35,9 +35,9 @@ const SignIn = () => {
       if (response.data.error) {
         Alert.alert('Error', response.data.message);
       } else {
-        // Guarda el token en AsyncStorage (Checar esto)
+        // Guarda el token con AsyncStorage y mi metodo creado (Checar esto)
         await storeAuthToken(response.data.token);
-        //await AsyncStorage.setItem('authToken', response.data.token);
+        //await AsyncStorage.setItem('authToken', response.data.token); //Aqui lo obtengo directamente y sin la función
         // Redirige al usuario a la pantalla principal después del login
         Alert.alert('Bienvenido', 'Inicio de sesión exitoso');
         router.push('/(tabs)/profile'); // Redirige a la página principal o dashboard
@@ -53,7 +53,7 @@ const SignIn = () => {
   return (
     <SafeAreaView className='bg-primary h-full'>
       <ScrollView contentContainerStyle={{ height: '100%' }}>
-        <View className='items-center'>
+        <View className='items-start px-10'>
           <Image
             source={icons.logo} 
             className='w-[110px] h-[110px]'

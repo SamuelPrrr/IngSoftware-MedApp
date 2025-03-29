@@ -10,7 +10,7 @@ type FormFieldProps = {
     //Propiedad que hace una función callback que se pasa como prop al componente FormField
     handleChangeText: (text: string) => void; 
     otherStyles?: string; 
-    keyboardType?: TextInputProps['keyboardType']; // Tipo correcto para keyboardType
+    keyboardType?: TextInputProps['keyboardType']; // Tipo correcto para keyboardType, le puedo asignar de otros tipos, por ejemplo númericos
     autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters'; // Nueva prop
   };
 

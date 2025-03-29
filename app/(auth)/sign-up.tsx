@@ -26,6 +26,34 @@ const SignUp = () => {
             Alert.alert('Error', 'Por favor selecciona tu género');
             return;
         }
+        if (!form.nombre.trim()) {
+            Alert.alert('Error', 'Por favor ingresa tu nombre');
+            return;
+        }
+        if (!form.email.trim()) {
+            Alert.alert('Error', 'Por favor ingresa tu correo electrónico');
+            return;
+        }
+        if (!validateEmail(form.email)) {
+            Alert.alert('Error', 'Por favor ingresa un correo electrónico válido');
+            return;
+        }
+        if (!form.password.trim()) {
+            Alert.alert('Error', 'Por favor ingresa tu contraseña');
+            return;
+        }
+        if (!validatePassword(form.password)) {
+            Alert.alert('Error', 'La contraseña debe tener mínimo 8 caracteres, una mayúscula, un número y un carácter especial.');
+            return;
+        }
+        if (!form.telefono.trim()) {
+            Alert.alert('Error', 'Por favor ingresa tu número de teléfono');
+            return;
+        }
+        if (!validatePhone(form.telefono)) {
+            Alert.alert('Error', 'El número de teléfono debe tener 10 dígitos');
+            return;
+        }
         
         setIsSubmitting(true)
         try {
@@ -64,7 +92,7 @@ const SignUp = () => {
     return (
         <SafeAreaView className='bg-primary h-full'>
             <ScrollView>
-                <View className='items-center'>
+                <View className='items-start px-10'>
                     <Image
                         source={icons.logo}
                         className='w-[110px] h-[110px]'
