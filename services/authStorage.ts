@@ -10,7 +10,7 @@ export const storeAuthToken = async (token: string) => {
 };
 
 // Obtener el token desde AsyncStorage
-const getAuthToken = async () => {
+export const getAuthToken = async () => {
   try {
     const token = await AsyncStorage.getItem('authToken');
     return token;
@@ -21,7 +21,7 @@ const getAuthToken = async () => {
 };
 
 // Eliminar el token cuando el usuario cierre sesión
-const removeAuthToken = async () => {
+export const removeAuthToken = async () => {
   try {
     await AsyncStorage.removeItem('authToken');
   } catch (error) {

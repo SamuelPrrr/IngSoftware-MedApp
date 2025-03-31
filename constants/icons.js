@@ -24,6 +24,7 @@ import date from "../assets/icons/date.png";
 import weight from "../assets/icons/weight.png";
 import male from "../assets/icons/male.png";
 import female from "../assets/icons/female.png";
+import calendar from "../assets/icons/calendar.png";
 
 
 export default {
@@ -52,5 +53,6 @@ export default {
   date,
   weight,
   male,
-  female
+  female,
+  calendar
 };
