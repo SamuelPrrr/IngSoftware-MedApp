@@ -13,6 +13,7 @@ const Book = () => {
   const [mode, setMode] = useState<'date' | 'time'>('date');
   const [show, setShow] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
+  const [selectedHorarios, setSelectedHorarios] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [doctors, setDoctors] = useState<{ id: string; name: string; specialty: string; horarios: string[] }[]>([]);
@@ -39,13 +40,12 @@ const Book = () => {
         }
       );
 
-      // Mapeo para crear la lista de doctores con sus horarios
       const doctorMap = response.data.data.reduce((acc: any, item: any) => {
         const doctorId = item.medico.idUsuario;
         const doctorName = item.medico.nombre;
         const doctorSpecialty = item.medico.especialidad;
         const horario = `${item.horaInicio} - ${item.horaFin}`;
-        
+
         if (!acc[doctorId]) {
           acc[doctorId] = {
             id: doctorId,
@@ -58,7 +58,7 @@ const Book = () => {
         return acc;
       }, {});
 
-      setDoctors(Object.values(doctorMap)); // Convertir el objeto en array
+      setDoctors(Object.values(doctorMap));
     } catch (error) {
       console.error(error);
       Alert.alert('Error', 'No se pudieron obtener los horarios disponibles.');
@@ -67,33 +67,19 @@ const Book = () => {
     }
   };
 
-  const onChange = (event: any, selectedDate?: Date) => {
-    const currentDate = selectedDate || date;
-    setShow(false);
-    setDate(currentDate);
-  };
+  const generateHorarios = (horaInicio: string, horaFin: string) => {
+    const horarios = [];
+    let start = new Date(`1970-01-01T${horaInicio}:00`);
+    let end = new Date(`1970-01-01T${horaFin}:00`);
 
-  const showMode = (currentMode: 'date' | 'time') => {
-    setShow(true);
-    setMode(currentMode);
-  };
-
-  const handleBookAppointment = async () => {
-    if (!selectedDoctor) {
-      Alert.alert('Error', 'Por favor selecciona un doctor');
-      return;
+    while (start < end) {
+      const hours = start.getHours();
+      const minutes = start.getMinutes() === 0 ? '00' : '30';
+      horarios.push(`${hours}:${minutes}`);
+      start.setMinutes(start.getMinutes() + 30);
     }
 
-    setIsSubmitting(true);
-    try {
-      Alert.alert('Éxito', 'Cita agendada correctamente');
-      router.back();
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'No se pudo agendar la cita');
-    } finally {
-      setIsSubmitting(false);
-    }
+    return horarios;
   };
 
   return (
@@ -101,11 +87,12 @@ const Book = () => {
       <ScrollView className="px-4">
         <Text className="text-2xl text-white font-semibold mt-6 mb-8">Agendar Nueva Cita</Text>
 
+        {/* Selección de fecha */}
         <View className="mb-8">
           <Text className="text-lg text-white font-medium mb-4">Selecciona una fecha:</Text>
           <TouchableOpacity
             className="flex-row items-center bg-black-200 p-4 rounded-lg border-2 border-gray-700"
-            onPress={() => showMode('date')}
+            onPress={() => setShow(true)}
           >
             <Image source={icons.calendar} className="w-5 h-5 mr-3" resizeMode="contain" />
             <Text className="text-white">
@@ -117,48 +104,70 @@ const Book = () => {
               })}
             </Text>
           </TouchableOpacity>
-          {show && mode === 'date' && (
-            <DateTimePicker testID="datePicker" value={date} mode="date" is24Hour={true} display="default" onChange={onChange} minimumDate={new Date()} />
+          {show && (
+            <DateTimePicker
+              testID="datePicker"
+              value={date}
+              mode="date"
+              is24Hour={true}
+              display="default"
+              onChange={(event, selectedDate) => {
+                setShow(false);
+                setDate(selectedDate || date);
+              }}
+              minimumDate={new Date()}
+            />
           )}
         </View>
 
+        {/* Selección de doctor */}
         <View className="mb-8">
           <Text className="text-lg text-white font-medium mb-4">Selecciona un doctor:</Text>
           {isLoading ? (
             <ActivityIndicator size="large" color="#62A8E5" />
           ) : (
-            <ScrollView className="mb-8">
-              <View className="space-y-3">
-                {doctors.length === 0 ? (
-                  <Text className="text-white">No hay doctores disponibles este día.</Text>
-                ) : (
-                  doctors.map((doctor) => (
-                    <TouchableOpacity
-                      key={`doctor-${doctor.id}`}
-                      className={`p-4 rounded-lg border-2 ${
-                        selectedDoctor === doctor.id ? 'border-secondary bg-black-200' : 'border-gray-700'
-                      }`}
-                      onPress={() => setSelectedDoctor(doctor.id)}
-                    >
-                      <Text className="text-white font-semibold text-lg"> {doctor.name}</Text>
-                      <Text className="text-gray-400">{doctor.specialty}</Text>
-                      <View className="mt-2">
-                        {doctor.horarios.map((horario, index) => (
-                          <Text key={`horario-${doctor.id}-${index}`} className="text-gray-300">
-                            {horario}
-                          </Text>
-                        ))}
-                      </View>
-                    </TouchableOpacity>
-                  ))
-                )}
-              </View>
-            </ScrollView>
+            doctors.map((doctor) => (
+              <TouchableOpacity
+                key={doctor.id}
+                className={`p-4 rounded-lg border-2 ${
+                  selectedDoctor === doctor.id ? 'border-secondary bg-black-200' : 'border-gray-700'
+                }`}
+                onPress={() => {
+                  setSelectedDoctor(doctor.id);
+                  setSelectedHorarios(doctor.horarios.flatMap((horario) => {
+                    const [horaInicio, horaFin] = horario.split(' - ');
+                    return generateHorarios(horaInicio, horaFin);
+                  }));
+                }}
+              >
+                <Text className="text-white font-semibold text-lg">{doctor.name}</Text>
+                <Text className="text-gray-400">{doctor.specialty}</Text>
+              </TouchableOpacity>
+            ))
           )}
         </View>
 
+        {/* Selección de horario en un ScrollView vertical */}
+        {selectedDoctor && (
+          <View className="mb-8">
+            <Text className="text-lg text-white font-medium mb-4">Selecciona un horario:</Text>
+            <ScrollView className="max-h-40 border border-gray-700 rounded-lg p-2">
+              {selectedHorarios.length > 0 ? (
+                selectedHorarios.map((horario, index) => (
+                  <TouchableOpacity key={index} className="p-2 border-b border-gray-600">
+                    <Text className="text-white">{horario}</Text>
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <Text className="text-gray-400">No hay horarios disponibles</Text>
+              )}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Botón para agendar */}
         <View className="mb-10">
-          <CustomButton title="Agendar Cita" handlePress={handleBookAppointment} containerStyles="mt-6" isLoading={isSubmitting} />
+          <CustomButton title="Agendar Cita" handlePress={() => Alert.alert('Cita Agendada')} containerStyles="mt-6" />
         </View>
       </ScrollView>
       <StatusBar backgroundColor={'#161622'} />
