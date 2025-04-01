@@ -14,6 +14,7 @@ const Book = () => {
   const [show, setShow] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
   const [selectedHorarios, setSelectedHorarios] = useState<string[]>([]);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null); // Para guardar el horario seleccionado
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [doctors, setDoctors] = useState<{ id: string; name: string; specialty: string; horarios: string[] }[]>([]);
@@ -82,6 +83,10 @@ const Book = () => {
     return horarios;
   };
 
+  const handleSelectTime = (horario: string) => {
+    setSelectedTime(horario === selectedTime ? null : horario); // Deselect if already selected
+  };
+
   return (
     <SafeAreaView className="bg-primary h-full">
       <ScrollView className="px-4">
@@ -147,15 +152,21 @@ const Book = () => {
           )}
         </View>
 
-        {/* Selección de horario en un ScrollView vertical */}
+        {/* Selección de horario en un ScrollView horizontal */}
         {selectedDoctor && (
           <View className="mb-8">
             <Text className="text-lg text-white font-medium mb-4">Selecciona un horario:</Text>
-            <ScrollView className="max-h-40 border border-gray-700 rounded-lg p-2">
+            <ScrollView horizontal className="max-h-40 border border-gray-700 rounded-lg p-2">
               {selectedHorarios.length > 0 ? (
                 selectedHorarios.map((horario, index) => (
-                  <TouchableOpacity key={index} className="p-2 border-b border-gray-600">
-                    <Text className="text-white">{horario}</Text>
+                  <TouchableOpacity
+                    key={index}
+                    className={`p-5 border-b border-gray-600 ${
+                      selectedTime === horario ? 'bg-blue-500' : 'bg-gray-700'
+                    }`}
+                    onPress={() => handleSelectTime(horario)}
+                  >
+                    <Text className={`text-white ${selectedTime === horario ? 'font-semibold' : ''}`}>{horario}</Text>
                   </TouchableOpacity>
                 ))
               ) : (
