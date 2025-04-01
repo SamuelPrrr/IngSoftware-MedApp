@@ -25,7 +25,10 @@ import weight from "../assets/icons/weight.png";
 import male from "../assets/icons/male.png";
 import female from "../assets/icons/female.png";
 import calendar from "../assets/icons/calendar.png";
-
+import doctorMale from "../assets/icons/doctorMale.png";
+import doctorFemale from "../assets/icons/doctorFemale.png";
+import clock from "../assets/icons/clock.png";
+import checkmark from "../assets/icons/checkmark.png";
 
 export default {
   logo,
@@ -54,5 +57,9 @@ export default {
   weight,
   male,
   female,
-  calendar
+  calendar,
+  doctorMale,
+  doctorFemale,
+  clock,
+  checkmark
 };

@@ -7,6 +7,7 @@ import CustomButton from '@/components/CustomButton';
 import { router } from 'expo-router';
 import axios, { AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DoctorCard from '@/components/DoctorCard';
 
 const BookAppointment = () => {
   // Estados
@@ -25,7 +26,9 @@ const BookAppointment = () => {
     id: string;
     name: string;
     specialty: string;
-    schedules: string[];
+    horaInicio: string;
+    horaFin: string;
+    sexo: 'Masculino' | 'Femenino'; 
   };
 
   // Formatear fecha para el backend
@@ -61,7 +64,6 @@ const BookAppointment = () => {
     return slots;
   };
 
-  //Doctores
   const fetchAvailableDoctors = async () => {
     setIsLoadingDoctors(true);
     try {
@@ -72,9 +74,9 @@ const BookAppointment = () => {
         return;
       }
   
-      const response = await axios.post(
-        'http://localhost:8080/api/pacientes/horarios/citas',
-        { diaSemana: getWeekDay(date) },
+      // Cambiamos a GET con parámetro query
+      const response = await axios.get(
+        `http://localhost:8080/api/pacientes/citas/disponibilidad/horarios-medicos?diaSemana=${getWeekDay(date)}`,
         {
           headers: { Authorization: `Bearer ${token}` },
           timeout: 10000,
@@ -83,18 +85,21 @@ const BookAppointment = () => {
   
       // Verificar si hay datos de doctores
       if (!response.data.data || response.data.data.length === 0) {
-        Alert.alert('Información', 'No hay citas disponibles para este día');
-        setDoctors([]); // Limpiar lista de doctores
+        Alert.alert('Información', 'No hay doctores disponibles para este día');
+        setDoctors([]);
         return;
       }
   
+      // Adaptamos la estructura de respuesta
       const doctorsData = response.data.data.map((item: any) => ({
-        id: item.medico.idUsuario.toString(),
-        name: item.medico.nombre,
-        specialty: item.medico.especialidad || 'General',
-        schedules: [`${item.horaInicio}-${item.horaFin}`]
+        id: item.medicoId.toString(),
+        name: item.medicoNombre,
+        specialty: item.especialidad,
+        horaInicio: item.horaInicio,
+        horaFin: item.horaFin,
+        sexo: item.sexo
       }));
-  
+
       setDoctors(doctorsData);
     } catch (error) {
       console.error('Error fetching doctors:', error);
@@ -103,7 +108,6 @@ const BookAppointment = () => {
           Alert.alert('Sesión expirada', 'Por favor inicia sesión nuevamente');
           router.replace('/(auth)/sign-in');
         } else if (error.response?.status === 404) {
-          // Manejar específicamente cuando no hay doctores
           Alert.alert('Información', 'No hay doctores disponibles para esta fecha');
           setDoctors([]);
         } else {
@@ -191,7 +195,7 @@ const BookAppointment = () => {
             className="flex-row items-center bg-black-200 p-4 rounded-lg border-2 border-gray-700"
             onPress={() => setShowDatePicker(true)}
           >
-            <Image source={icons.calendar} className="w-5 h-5 mr-3" resizeMode="contain" />
+            <Image source={icons.calendar} className="w-8 h-8 mr-4" resizeMode="contain" />
             <Text className="text-white">
               {date.toLocaleDateString('es-MX', {
                 weekday: 'long',
@@ -225,36 +229,29 @@ const BookAppointment = () => {
           <Text className="text-lg text-white font-medium mb-4">Selecciona un doctor:</Text>
           
           {isLoadingDoctors ? (
-            <ActivityIndicator size="large" color="#62A8E5" />
+          <ActivityIndicator size="large" color="#62A8E5" />
           ) : doctors.length > 0 ? (
-            <ScrollView 
-              className="max-h-64 border border-gray-700 rounded-lg p-2"
-              showsVerticalScrollIndicator={true}
-            >
-              {doctors.map((doctor) => (
-                <TouchableOpacity
-                  key={doctor.id}
-                  className={`p-4 mb-2 rounded-lg border-2 ${
-                    selectedDoctor === doctor.id ? 'border-secondary bg-black-200' : 'border-gray-700'
-                  }`}
-                  onPress={() => {
-                    setSelectedDoctor(doctor.id);
-                    const slots = doctor.schedules.flatMap(schedule => {
-                      const [start, end] = schedule.split('-');
-                      return generateTimeSlots(start, end);
-                    });
-                    setAvailableSlots(slots);
-                    setSelectedTime(null);
-                  }}
-                >
-                  <Text className="text-white font-semibold text-lg">Dr. {doctor.name}</Text>
-                  <Text className="text-gray-400">{doctor.specialty}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          ) : (
-            <Text className="text-gray-400 p-4">No hay doctores disponibles para esta fecha</Text>
-          )}
+              <ScrollView 
+                className="max-h-64 border border-gray-700 rounded-lg p-2"
+                showsVerticalScrollIndicator={true}
+              >
+                {doctors.map((doctor) => (
+                  <DoctorCard
+                    key={doctor.id}
+                    doctor={doctor}
+                    isSelected={selectedDoctor === doctor.id}
+                    onPress={() => {
+                      setSelectedDoctor(doctor.id);
+                      const slots = generateTimeSlots(doctor.horaInicio, doctor.horaFin);
+                      setAvailableSlots(slots);
+                      setSelectedTime(null);
+                    }}
+                  />
+                ))}
+                </ScrollView>
+                ) : (
+                <Text className="text-gray-400 p-4">No hay doctores disponibles para esta fecha</Text>
+              )}
         </View>
 
         {/* Horarios disponibles */}
