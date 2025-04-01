@@ -1,103 +1,184 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StatusBar, Alert, Image, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StatusBar, Alert, Image, ActivityIndicator, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { icons } from '../../constants';
 import CustomButton from '@/components/CustomButton';
 import { router } from 'expo-router';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const Book = () => {
+const BookAppointment = () => {
+  // Estados
   const [date, setDate] = useState(new Date());
-  const [mode, setMode] = useState<'date' | 'time'>('date');
-  const [show, setShow] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
-  const [selectedHorarios, setSelectedHorarios] = useState<string[]>([]);
-  const [selectedTime, setSelectedTime] = useState<string | null>(null); // Para guardar el horario seleccionado
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [reason, setReason] = useState("Consulta médica");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [doctors, setDoctors] = useState<{ id: string; name: string; specialty: string; horarios: string[] }[]>([]);
+  const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
 
-  useEffect(() => {
-    fetchDoctors();
-  }, [date]);
+  // Tipos
+  type Doctor = {
+    id: string;
+    name: string;
+    specialty: string;
+    schedules: string[];
+  };
 
-  const getDayOfWeek = (date: Date): string => {
+  // Formatear fecha para el backend
+  const formatForBackend = (date: Date): string => {
+    const pad = (num: number) => num.toString().padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
+  };
+
+  // Obtener día de la semana en español
+  const getWeekDay = (date: Date): string => {
     const days = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
     return days[date.getDay()];
   };
 
-  const fetchDoctors = async () => {
-    setIsLoading(true);
-    const dayOfWeek = getDayOfWeek(date);
+  // Generar slots de tiempo
+  const generateTimeSlots = (start: string, end: string): string[] => {
+    const slots: string[] = [];
+    const [startHour, startMin] = start.split(':').map(Number);
+    const [endHour, endMin] = end.split(':').map(Number);
+    
+    let currentHour = startHour;
+    let currentMin = startMin;
+    
+    while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
+      slots.push(`${currentHour}:${currentMin.toString().padStart(2, '0')}`);
+      currentMin += 30;
+      if (currentMin >= 60) {
+        currentMin = 0;
+        currentHour++;
+      }
+    }
+    
+    return slots;
+  };
+
+  // Obtener doctores disponibles
+  const fetchAvailableDoctors = async () => {
+    setIsLoadingDoctors(true);
     try {
       const token = await AsyncStorage.getItem('authToken');
+      if (!token) {
+        Alert.alert('Error', 'No se encontró el token de sesión');
+        router.replace('/(auth)/sign-in');
+        return;
+      }
+
       const response = await axios.post(
         'http://localhost:8080/api/pacientes/horarios/citas',
-        { diaSemana: dayOfWeek },
+        { diaSemana: getWeekDay(date) },
         {
           headers: { Authorization: `Bearer ${token}` },
+          timeout: 10000,
         }
       );
 
-      const doctorMap = response.data.data.reduce((acc: any, item: any) => {
-        const doctorId = item.medico.idUsuario;
-        const doctorName = item.medico.nombre;
-        const doctorSpecialty = item.medico.especialidad;
-        const horario = `${item.horaInicio} - ${item.horaFin}`;
+      const doctorsData = response.data.data.map((item: any) => ({
+        id: item.medico.idUsuario.toString(),
+        name: item.medico.nombre,
+        specialty: item.medico.especialidad || 'General',
+        schedules: [`${item.horaInicio}-${item.horaFin}`]
+      }));
 
-        if (!acc[doctorId]) {
-          acc[doctorId] = {
-            id: doctorId,
-            name: doctorName,
-            specialty: doctorSpecialty,
-            horarios: [],
-          };
-        }
-        acc[doctorId].horarios.push(horario);
-        return acc;
-      }, {});
-
-      setDoctors(Object.values(doctorMap));
+      setDoctors(doctorsData);
     } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'No se pudieron obtener los horarios disponibles.');
+      console.error('Error fetching doctors:', error);
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 403) {
+          Alert.alert('Sesión expirada', 'Por favor inicia sesión nuevamente');
+          router.replace('/(auth)/sign-in');
+        } else {
+          Alert.alert('Error', 'No se pudieron cargar los doctores disponibles');
+        }
+      }
     } finally {
-      setIsLoading(false);
+      setIsLoadingDoctors(false);
     }
   };
 
-  const generateHorarios = (horaInicio: string, horaFin: string) => {
-    const horarios = [];
-    let start = new Date(`1970-01-01T${horaInicio}:00`);
-    let end = new Date(`1970-01-01T${horaFin}:00`);
-
-    while (start < end) {
-      const hours = start.getHours();
-      const minutes = start.getMinutes() === 0 ? '00' : '30';
-      horarios.push(`${hours}:${minutes}`);
-      start.setMinutes(start.getMinutes() + 30);
+  // Agendar cita
+  const handleBookAppointment = async () => {
+    if (!selectedDoctor || !selectedTime) {
+      Alert.alert('Error', 'Por favor selecciona doctor y horario');
+      return;
     }
+  
+    setIsSubmitting(true);
+    
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      if (!token) {
+        Alert.alert('Error', 'No se encontró el token de sesión');
+        return;
+      }
 
-    return horarios;
+      const [hours, minutes] = selectedTime.split(':');
+      const appointmentDate = new Date(date);
+      appointmentDate.setHours(parseInt(hours), parseInt(minutes));
+
+      const response = await axios.post(
+        `http://localhost:8080/api/pacientes/citas/${selectedDoctor}`,
+        {
+          fechaHora: formatForBackend(appointmentDate),
+          duracion: 30,
+          motivo: reason || 'Consulta médica'
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+  
+      if (response.data.error === false) {
+        Alert.alert('Éxito', response.data.message || 'Cita agendada correctamente');
+        router.back();
+      } else {
+        Alert.alert('Error', response.data.message || 'Error al agendar la cita');
+      }
+    } catch (error: unknown) {
+      console.error('Error:', error);
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 403) {
+          Alert.alert('Error', 'No tienes permiso para esta acción. Por favor inicia sesión nuevamente.');
+        } else {
+          Alert.alert('Error', error.response?.data?.message || 'Error al agendar la cita');
+        }
+      } else if (error instanceof Error) {
+        Alert.alert('Error', error.message || 'Ocurrió un error inesperado');
+      } else {
+        Alert.alert('Error', 'Ocurrió un error desconocido');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleSelectTime = (horario: string) => {
-    setSelectedTime(horario === selectedTime ? null : horario); // Deselect if already selected
-  };
+  // Cargar doctores al cambiar la fecha
+  useEffect(() => {
+    fetchAvailableDoctors();
+  }, [date]);
 
   return (
     <SafeAreaView className="bg-primary h-full">
       <ScrollView className="px-4">
         <Text className="text-2xl text-white font-semibold mt-6 mb-8">Agendar Nueva Cita</Text>
 
-        {/* Selección de fecha */}
+        {/* Selector de fecha */}
         <View className="mb-8">
           <Text className="text-lg text-white font-medium mb-4">Selecciona una fecha:</Text>
           <TouchableOpacity
             className="flex-row items-center bg-black-200 p-4 rounded-lg border-2 border-gray-700"
-            onPress={() => setShow(true)}
+            onPress={() => setShowDatePicker(true)}
           >
             <Image source={icons.calendar} className="w-5 h-5 mr-3" resizeMode="contain" />
             <Text className="text-white">
@@ -109,64 +190,74 @@ const Book = () => {
               })}
             </Text>
           </TouchableOpacity>
-          {show && (
+          
+          {showDatePicker && (
             <DateTimePicker
-              testID="datePicker"
               value={date}
               mode="date"
-              is24Hour={true}
               display="default"
-              onChange={(event, selectedDate) => {
-                setShow(false);
-                setDate(selectedDate || date);
-              }}
               minimumDate={new Date()}
+              onChange={(event, selectedDate) => {
+                setShowDatePicker(false);
+                if (selectedDate) {
+                  setDate(selectedDate);
+                  setSelectedDoctor(null);
+                  setSelectedTime(null);
+                }
+              }}
             />
           )}
         </View>
 
-        {/* Selección de doctor */}
+        {/* Lista de doctores */}
         <View className="mb-8">
           <Text className="text-lg text-white font-medium mb-4">Selecciona un doctor:</Text>
-          {isLoading ? (
+          
+          {isLoadingDoctors ? (
             <ActivityIndicator size="large" color="#62A8E5" />
-          ) : (
+          ) : doctors.length > 0 ? (
             doctors.map((doctor) => (
               <TouchableOpacity
                 key={doctor.id}
-                className={`p-4 rounded-lg border-2 ${
+                className={`p-4 mb-3 rounded-lg border-2 ${
                   selectedDoctor === doctor.id ? 'border-secondary bg-black-200' : 'border-gray-700'
                 }`}
                 onPress={() => {
                   setSelectedDoctor(doctor.id);
-                  setSelectedHorarios(doctor.horarios.flatMap((horario) => {
-                    const [horaInicio, horaFin] = horario.split(' - ');
-                    return generateHorarios(horaInicio, horaFin);
-                  }));
+                  const slots = doctor.schedules.flatMap(schedule => {
+                    const [start, end] = schedule.split('-');
+                    return generateTimeSlots(start, end);
+                  });
+                  setAvailableSlots(slots);
+                  setSelectedTime(null);
                 }}
               >
                 <Text className="text-white font-semibold text-lg">{doctor.name}</Text>
                 <Text className="text-gray-400">{doctor.specialty}</Text>
               </TouchableOpacity>
             ))
+          ) : (
+            <Text className="text-gray-400">No hay doctores disponibles para esta fecha</Text>
           )}
         </View>
 
-        {/* Selección de horario en un ScrollView horizontal */}
+        {/* Horarios disponibles */}
         {selectedDoctor && (
           <View className="mb-8">
             <Text className="text-lg text-white font-medium mb-4">Selecciona un horario:</Text>
             <ScrollView horizontal className="max-h-40 border border-gray-700 rounded-lg p-2">
-              {selectedHorarios.length > 0 ? (
-                selectedHorarios.map((horario, index) => (
+              {availableSlots.length > 0 ? (
+                availableSlots.map((slot, index) => (
                   <TouchableOpacity
                     key={index}
-                    className={`p-5 border-b border-gray-600 ${
-                      selectedTime === horario ? 'bg-blue-500' : 'bg-gray-700'
+                    className={`p-5 mr-2 rounded-lg ${
+                      selectedTime === slot ? 'bg-blue-500' : 'bg-gray-700'
                     }`}
-                    onPress={() => handleSelectTime(horario)}
+                    onPress={() => setSelectedTime(slot)}
                   >
-                    <Text className={`text-white ${selectedTime === horario ? 'font-semibold' : ''}`}>{horario}</Text>
+                    <Text className={`text-white ${selectedTime === slot ? 'font-semibold' : ''}`}>
+                      {slot}
+                    </Text>
                   </TouchableOpacity>
                 ))
               ) : (
@@ -176,14 +267,36 @@ const Book = () => {
           </View>
         )}
 
+        {/* Motivo de la consulta */}
+        {selectedDoctor && selectedTime && (
+          <View className="mb-8">
+            <Text className="text-lg text-white font-medium mb-4">Motivo de la consulta:</Text>
+            <TextInput
+              className="bg-black-200 p-4 rounded-lg border-2 border-gray-700 text-white"
+              value={reason}
+              onChangeText={setReason}
+              placeholder="Describe el motivo de tu consulta"
+              placeholderTextColor="#6b7280"
+              multiline
+              numberOfLines={3}
+            />
+          </View>
+        )}
+
         {/* Botón para agendar */}
         <View className="mb-10">
-          <CustomButton title="Agendar Cita" handlePress={() => Alert.alert('Cita Agendada')} containerStyles="mt-6" />
+          <CustomButton
+            title={isSubmitting ? "Agendando..." : "Agendar Cita"}
+            handlePress={handleBookAppointment}
+            isLoading={isSubmitting}
+            containerStyles="mt-6"
+            //disabled={isSubmitting || !selectedDoctor || !selectedTime}
+          />
         </View>
       </ScrollView>
-      <StatusBar backgroundColor={'#161622'} />
+      <StatusBar backgroundColor="#161622" />
     </SafeAreaView>
   );
 };
 
-export default Book;
+export default BookAppointment;
