@@ -30,7 +30,7 @@ const DoctorCard = ({
     <TouchableOpacity
       onPress={onPress}
       className={`p-4 mb-2 rounded-lg border-2 ${
-        isSelected ? 'border-secondary bg-black-200' : 'border-gray-700'
+        isSelected ? 'border-terciary bg-black-200' : 'border-gray-700'
       }`}
       activeOpacity={0.7}
     >

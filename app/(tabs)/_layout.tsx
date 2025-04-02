@@ -40,7 +40,6 @@ export default function TabLayout() {
         tabBarShowLabel: false,
         tabBarActiveTintColor: '#1372DF',
         tabBarInactiveTintColor: '#CDCDE0',
-        headerShown: false,
         tabBarStyle: {
           backgroundColor: '#161622',
           paddingTop: 15,
@@ -48,11 +47,16 @@ export default function TabLayout() {
           height: 80,
           borderColor: '#1372DF'
         },
+         // 🎨 Cambiar color del header
+        headerStyle: {
+          backgroundColor: '#2F88FF', // Color de fondo del header
+        },
+        headerTintColor: '#FFFFFF', // Color del texto y los íconos en el header
       }}>
       <Tabs.Screen
         name="book"
         options={{
-          title: 'Agendar',
+          title: 'Agendar Cita',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
               icon={icons.plus}
@@ -66,7 +70,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Perfil',
+          title: '¡Bienvenido!',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
               icon={icons.profile}

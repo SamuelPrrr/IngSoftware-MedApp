@@ -186,7 +186,7 @@ const BookAppointment = () => {
   return (
     <SafeAreaView className="bg-primary h-full">
       <ScrollView className="px-4">
-        <Text className="text-2xl text-white font-semibold mt-6 mb-8">Agendar Nueva Cita</Text>
+        <Text className="text-2xl text-secondary font-bold mt-6 mb-8">NUEVA CITA</Text>
 
         {/* Selector de fecha */}
         <View className="mb-8">
@@ -195,7 +195,7 @@ const BookAppointment = () => {
             className="flex-row items-center bg-black-200 p-4 rounded-lg border-2 border-gray-700"
             onPress={() => setShowDatePicker(true)}
           >
-            <Image source={icons.calendar} className="w-8 h-8 mr-4" resizeMode="contain" />
+            <Image source={icons.calendar} className="w-8 h-8 mr-3" resizeMode="contain" />
             <Text className="text-white">
               {date.toLocaleDateString('es-MX', {
                 weekday: 'long',
@@ -264,7 +264,7 @@ const BookAppointment = () => {
                   <TouchableOpacity
                     key={index}
                     className={`p-5 mr-2 rounded-lg ${
-                      selectedTime === slot ? 'bg-blue-500' : 'bg-gray-700'
+                      selectedTime === slot ? 'bg-terciary' : 'bg-gray-700'
                     }`}
                     onPress={() => setSelectedTime(slot)}
                   >

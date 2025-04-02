@@ -9,7 +9,7 @@ import CustomButton from '@/components/CustomButton';
 import AppointmentCard from '@/components/AppointmentCard';
 
 type TabType = 'info' | 'medicamentos' | 'citas';
-type AppointmentStatus = 'pendiente' | 'confirmada' | 'cancelada';
+type AppointmentStatus = 'PENDIENTE' | 'CONFIRMADA' | 'COMPLETADA' | 'CANCELADA';
 
 interface User {
   nombre: string;
@@ -85,50 +85,80 @@ const Profile = () => {
           especialidad: cita.medico.especialidad,
           id: cita.medico.id
         },
-        estado: cita.estado.toLowerCase() as AppointmentStatus,
+        estado: cita.estado as AppointmentStatus, // Usamos el tipo directamente
         motivo: cita.motivo
       }));
       
       setAppointments(mappedAppointments);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      Alert.alert('Error', 'No se pudieron cargar las citas');
+      Alert.alert('Error', error.response?.data?.message || 'No se pudieron cargar las citas');
     }
   };
 
   const handleConfirmAppointment = async (appointmentId: string) => {
+    setIsSubmitting(true);
     try {
-      setIsSubmitting(true);
       const token = await AsyncStorage.getItem('authToken');
-      await axios.put(
-        `http://localhost:8080/api/pacientes/citas/${appointmentId}/confirmar`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await axios.put(
+        `http://localhost:8080/api/pacientes/citas/${appointmentId}/estado`,
+        null,
+        {
+          params: { nuevoEstado: 'CONFIRMADA' }, // Mayúsculas para coincidir con el enum
+          headers: { Authorization: `Bearer ${token}` }
+        }
       );
-      await fetchAppointments();
-      Alert.alert('Éxito', 'Cita confirmada correctamente');
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'No se pudo confirmar la cita');
+  
+      if (response.data.error) {
+        Alert.alert('Error', response.data.message);
+      } else {
+        setAppointments(prevAppointments => 
+          prevAppointments.map(appointment => 
+            appointment.id === appointmentId 
+              ? { ...appointment, estado: 'CONFIRMADA' } 
+              : appointment
+          )
+        );
+        Alert.alert('Éxito', 'Cita confirmada correctamente');
+      }
+    } catch (error: any) { // Especificamos el tipo 'any' para evitar el error
+      console.error('Error al confirmar cita:', error);
+      const errorMessage = error.response?.data?.message || 'Error al confirmar la cita';
+      Alert.alert('Error', errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
   
   const handleCancelAppointment = async (appointmentId: string) => {
+    setIsSubmitting(true);
     try {
-      setIsSubmitting(true);
       const token = await AsyncStorage.getItem('authToken');
-      await axios.put(
-        `http://localhost:8080/api/pacientes/citas/${appointmentId}/cancelar`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await axios.put(
+        `http://localhost:8080/api/pacientes/citas/${appointmentId}/estado`,
+        null,
+        {
+          params: { nuevoEstado: 'CANCELADA' }, // Mayúsculas para coincidir con el enum
+          headers: { Authorization: `Bearer ${token}` }
+        }
       );
-      await fetchAppointments();
-      Alert.alert('Éxito', 'Cita cancelada correctamente');
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'No se pudo cancelar la cita');
+  
+      if (response.data.error) {
+        Alert.alert('Error', response.data.message);
+      } else {
+        setAppointments(prevAppointments => 
+          prevAppointments.map(appointment => 
+            appointment.id === appointmentId 
+              ? { ...appointment, estado: 'CANCELADA' } 
+              : appointment
+          )
+        );
+        Alert.alert('Éxito', 'Cita cancelada correctamente');
+      }
+    } catch (error: any) { // Especificamos el tipo 'any' para evitar el error
+      console.error('Error al cancelar cita:', error);
+      const errorMessage = error.response?.data?.message || 'Error al cancelar la cita';
+      Alert.alert('Error', errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -199,6 +229,13 @@ const Profile = () => {
             ) : (
               <Text className="text-lg text-gray-400 text-center mt-8">Cargando información...</Text>
             )}
+
+          <CustomButton 
+          title="Actualizar datos"
+          handlePress={updateData}
+          containerStyles="mt-10 w-2/4 mx-auto"
+          isLoading={isSubmitting}
+          />
           </View>
         );
       case 'medicamentos':
@@ -221,7 +258,7 @@ const Profile = () => {
                   appointment={{
                     id: appointment.id,
                     fechaHora: appointment.fechaHora,
-                    medico: {  // Pass the full medico object
+                    medico: {
                       nombre: appointment.medico.nombre,
                       especialidad: appointment.medico.especialidad
                     },
@@ -250,28 +287,28 @@ const Profile = () => {
 
         <View className="flex-row justify-center mt-6 border-b border-gray-700 mx-4">
           <TouchableOpacity 
-            className={`px-6 pb-3 ${activeTab === 'info' ? 'border-b-2 border-secondary' : ''}`}
+            className={`px-6 pb-3 ${activeTab === 'info' ? 'border-b-2 border-terciary' : ''}`}
             onPress={() => setActiveTab('info')}
           >
-            <Text className={`text-lg ${activeTab === 'info' ? 'text-secondary font-semibold' : 'text-gray-400'}`}>
+            <Text className={`text-lg ${activeTab === 'info' ? 'text-terciary font-semibold' : 'text-gray-400'}`}>
               Info.
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
-            className={`px-6 pb-3 ${activeTab === 'medicamentos' ? 'border-b-2 border-secondary' : ''}`}
+            className={`px-6 pb-3 ${activeTab === 'medicamentos' ? 'border-b-2 border-terciary' : ''}`}
             onPress={() => setActiveTab('medicamentos')}
           >
-            <Text className={`text-lg ${activeTab === 'medicamentos' ? 'text-secondary font-semibold' : 'text-gray-400'}`}>
+            <Text className={`text-lg ${activeTab === 'medicamentos' ? 'text-terciary font-semibold' : 'text-gray-400'}`}>
               Medicamentos
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
-            className={`px-6 pb-3 ${activeTab === 'citas' ? 'border-b-2 border-secondary' : ''}`}
+            className={`px-6 pb-3 ${activeTab === 'citas' ? 'border-b-2 border-terciary' : ''}`}
             onPress={() => setActiveTab('citas')}
           >
-            <Text className={`text-lg ${activeTab === 'citas' ? 'text-secondary font-semibold' : 'text-gray-400'}`}>
+            <Text className={`text-lg ${activeTab === 'citas' ? 'text-terciary font-semibold' : 'text-gray-400'}`}>
               Citas
             </Text>
           </TouchableOpacity>
@@ -279,12 +316,6 @@ const Profile = () => {
 
         {renderContent()}
 
-        <CustomButton 
-          title="Actualizar datos"
-          handlePress={updateData}
-          containerStyles="mt-10 w-2/4 mx-auto"
-          isLoading={isSubmitting}
-        />
       </ScrollView>
       <StatusBar backgroundColor={'#161622'} />
     </SafeAreaView>

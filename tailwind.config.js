@@ -9,8 +9,9 @@ module.exports = {
         secondary: '#1372DF',
         secondaryHover: '#093970',
         secondary50: '#D6E7FB',
-        secondary100: '#84B8F4'
-        
+        secondary100: '#84B8F4',
+        terciary: '#31D0AA',
+        error: '#FF4545'
       }
     },
   },
