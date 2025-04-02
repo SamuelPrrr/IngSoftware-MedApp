@@ -29,6 +29,7 @@ import doctorMale from "../assets/icons/doctorMale.png";
 import doctorFemale from "../assets/icons/doctorFemale.png";
 import clock from "../assets/icons/clock.png";
 import checkmark from "../assets/icons/checkmark.png";
+import close from "../assets/icons/close.png";
 
 export default {
   logo,
@@ -61,5 +62,6 @@ export default {
   doctorMale,
   doctorFemale,
   clock,
-  checkmark
+  checkmark, 
+  close
 };
