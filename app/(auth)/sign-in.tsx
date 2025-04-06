@@ -7,6 +7,7 @@ import CustomButton from '@/components/CustomButton';
 import { Link, useRouter } from 'expo-router';
 import axios from 'axios';
 import { storeAuthToken }from '@/services/authStorage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SignIn = () => {
 
@@ -39,8 +40,12 @@ const SignIn = () => {
         await storeAuthToken(response.data.token);
         //await AsyncStorage.setItem('authToken', response.data.token); //Aqui lo obtengo directamente y sin la función
         // Redirige al usuario a la pantalla principal después del login
+        const token = await AsyncStorage.getItem('authToken');
+        const route = await axios.get("http://localhost:8080/auth/route", {
+            headers: { Authorization: `Bearer ${token}`}
+        });
         Alert.alert('Bienvenido', 'Inicio de sesión exitoso');
-        router.push('/(tabs)/profile'); // Redirige a la página principal o dashboard
+        router.push(route.data.data); // Redirige a la página principal o dashboard
       }
     } catch (error) {
       console.error(error);

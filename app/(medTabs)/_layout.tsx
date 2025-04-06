@@ -54,14 +54,14 @@ export default function TabLayout() {
         headerTintColor: '#FFFFFF', // Color del texto y los íconos en el header
       }}>
       <Tabs.Screen
-        name="book"
+        name="dashboard"
         options={{
-          title: 'Agendar Cita',
+          title: 'Control',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
               icon={icons.plus}
               color={color}
-              name="Agendar"
+              name="Control"
               focused={focused}
             />
           ),

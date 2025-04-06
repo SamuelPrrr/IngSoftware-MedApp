@@ -11,7 +11,7 @@ interface AppointmentCardProps {
         nombre: string;
         especialidad: string;
       };
-      estado: string;
+      estado: string;   
       motivo?: string;
     };
     onConfirm: () => void;
@@ -20,7 +20,7 @@ interface AppointmentCardProps {
 
 
 
-const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, onConfirm, onCancel }) => {
+const AppointmentCardPac: React.FC<AppointmentCardProps> = ({ appointment, onConfirm, onCancel }) => {
   const pan = React.useRef(new Animated.ValueXY()).current;
 
   const panResponder = React.useRef(
@@ -91,4 +91,4 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, onConfir
   );
 };
 
-export default AppointmentCard;
+export default AppointmentCardPac;

@@ -6,9 +6,9 @@ import { useRouter } from 'expo-router';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CustomButton from '@/components/CustomButton';
-import AppointmentCardPac from '@/components/AppointmentCardPac';
+import AppointmentCardDoc from '@/components/AppointmentCardDoc';
 
-type TabType = 'info' | 'medicamentos' | 'citas';
+type TabType = 'info' | 'citas';
 type AppointmentStatus = 'PENDIENTE' | 'CONFIRMADA' | 'COMPLETADA' | 'CANCELADA';
 
 interface User {
@@ -23,9 +23,9 @@ interface User {
 interface Appointment {
   id: string;
   fechaHora: string;
-  medico: {
+  paciente: {
     nombre: string;
-    especialidad: string;
+    sexo: string;
     id: number;
   };
   estado: AppointmentStatus;
@@ -54,7 +54,7 @@ const Profile = () => {
         return;
       }
 
-      const response = await axios.get('http://localhost:8080/api/pacientes/profile', { 
+      const response = await axios.get('http://localhost:8080/api/medicos/profile', { 
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -73,17 +73,17 @@ const Profile = () => {
   const fetchAppointments = async () => {
     try {
       const token = await AsyncStorage.getItem('authToken');
-      const response = await axios.get('http://localhost:8080/api/pacientes/citas', {
+      const response = await axios.get('http://localhost:8080/api/medicos/citas', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
       const mappedAppointments = response.data.data.map((cita: any) => ({
         id: cita.id.toString(),
         fechaHora: cita.fechaHora,
-        medico: {
-          nombre: cita.medico.nombre,
-          especialidad: cita.medico.especialidad,
-          id: cita.medico.id
+        paciente: {
+          nombre: cita.paciente.nombre,
+          sexo: cita.paciente.sexo,
+          id: cita.paciente.id
         },
         estado: cita.estado as AppointmentStatus, // Usamos el tipo directamente
         motivo: cita.motivo
@@ -96,73 +96,73 @@ const Profile = () => {
     }
   };
 
-  const handleConfirmAppointment = async (appointmentId: string) => {
-    setIsSubmitting(true);
-    try {
-      const token = await AsyncStorage.getItem('authToken');
-      const response = await axios.put(
-        `http://localhost:8080/api/pacientes/citas/${appointmentId}/estado`,
-        null,
-        {
-          params: { nuevoEstado: 'CONFIRMADA' }, // Mayúsculas para coincidir con el enum
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+   const handleConfirmAppointment = async (appointmentId: string) => {
+     setIsSubmitting(true);
+     try {
+       const token = await AsyncStorage.getItem('authToken');
+       const response = await axios.put(
+         `http://localhost:8080/api/medicos/citas/${appointmentId}/estado`,
+         null,
+         {
+           params: { nuevoEstado: 'CONFIRMADA' }, // Mayúsculas para coincidir con el enum
+           headers: { Authorization: `Bearer ${token}` }
+         }
+       );
   
-      if (response.data.error) {
-        Alert.alert('Error', response.data.message);
-      } else {
-        setAppointments(prevAppointments => 
-          prevAppointments.map(appointment => 
-            appointment.id === appointmentId 
-              ? { ...appointment, estado: 'CONFIRMADA' } 
-              : appointment
-          )
-        );
-        Alert.alert('Éxito', 'Cita confirmada correctamente');
-      }
-    } catch (error: any) { // Especificamos el tipo 'any' para evitar el error
-      console.error('Error al confirmar cita:', error);
-      const errorMessage = error.response?.data?.message || 'Error al confirmar la cita';
-      Alert.alert('Error', errorMessage);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+       if (response.data.error) {
+         Alert.alert('Error', response.data.message);
+       } else {
+         setAppointments(prevAppointments => 
+           prevAppointments.map(appointment => 
+             appointment.id === appointmentId 
+               ? { ...appointment, estado: 'CONFIRMADA' } 
+               : appointment
+           )
+         );
+         Alert.alert('Éxito', 'Cita confirmada correctamente');
+       }
+     } catch (error: any) { // Especificamos el tipo 'any' para evitar el error
+       console.error('Error al confirmar cita:', error);
+       const errorMessage = error.response?.data?.message || 'Error al confirmar la cita';
+       Alert.alert('Error', errorMessage);
+     } finally {
+       setIsSubmitting(false);
+     }
+   };
   
-  const handleCancelAppointment = async (appointmentId: string) => {
-    setIsSubmitting(true);
-    try {
-      const token = await AsyncStorage.getItem('authToken');
-      const response = await axios.put(
-        `http://localhost:8080/api/pacientes/citas/${appointmentId}/estado`,
-        null,
-        {
-          params: { nuevoEstado: 'CANCELADA' }, // Mayúsculas para coincidir con el enum
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+   const handleCancelAppointment = async (appointmentId: string) => {
+     setIsSubmitting(true);
+     try {
+       const token = await AsyncStorage.getItem('authToken');
+       const response = await axios.put(
+         `http://localhost:8080/api/medicos/citas/${appointmentId}/estado`,
+         null,
+         {
+           params: { nuevoEstado: 'CANCELADA' }, // Mayúsculas para coincidir con el enum
+           headers: { Authorization: `Bearer ${token}` }
+         }
+       );
   
-      if (response.data.error) {
-        Alert.alert('Error', response.data.message);
-      } else {
-        setAppointments(prevAppointments => 
-          prevAppointments.map(appointment => 
-            appointment.id === appointmentId 
-              ? { ...appointment, estado: 'CANCELADA' } 
-              : appointment
-          )
-        );
-        Alert.alert('Éxito', 'Cita cancelada correctamente');
-      }
-    } catch (error: any) { // Especificamos el tipo 'any' para evitar el error
-      console.error('Error al cancelar cita:', error);
-      const errorMessage = error.response?.data?.message || 'Error al cancelar la cita';
-      Alert.alert('Error', errorMessage);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+       if (response.data.error) {
+         Alert.alert('Error', response.data.message);
+       } else {
+         setAppointments(prevAppointments => 
+           prevAppointments.map(appointment => 
+             appointment.id === appointmentId 
+               ? { ...appointment, estado: 'CANCELADA' } 
+               : appointment
+           )
+         );
+         Alert.alert('Éxito', 'Cita cancelada correctamente');
+       }
+     } catch (error: any) { // Especificamos el tipo 'any' para evitar el error
+       console.error('Error al cancelar cita:', error);
+       const errorMessage = error.response?.data?.message || 'Error al cancelar la cita';
+       Alert.alert('Error', errorMessage);
+     } finally {
+       setIsSubmitting(false);
+     }
+   };
 
   useEffect(() => {
     fetchUserData();
@@ -173,7 +173,7 @@ const Profile = () => {
     switch (activeTab) {
       case 'info':
         return (
-          <View className="w-full px-6 mt-6">
+          <View className="h-full w-full px-6 mt-6">
             {user ? (
               <View className="space-y-4">
                 <View className="flex-row justify-between items-center bg-black-200 p-4 rounded-lg">
@@ -238,14 +238,6 @@ const Profile = () => {
           />
           </View>
         );
-      case 'medicamentos':
-        return (
-          <View className="w-full px-10 mt-8 items-center">
-            <View className="w-full max-w-md">
-              <Text className="text-lg text-white font-medium text-center">Aquí irá la lista de medicamentos</Text>
-            </View>
-          </View>
-        );
       case 'citas':
         return (
           <View className="w-full mt-4">
@@ -253,14 +245,14 @@ const Profile = () => {
               <Text className="text-gray-400 text-center mt-8">No tienes citas programadas</Text>
             ) : (
               appointments.map(appointment => (
-                <AppointmentCardPac
+                <AppointmentCardDoc
                   key={appointment.id}
                   appointment={{
                     id: appointment.id,
                     fechaHora: appointment.fechaHora,
-                    medico: {
-                      nombre: appointment.medico.nombre,
-                      especialidad: appointment.medico.especialidad
+                    paciente: {
+                      nombre: appointment.paciente.nombre,
+                      sexo: appointment.paciente.sexo
                     },
                     estado: appointment.estado,
                     motivo: appointment.motivo
@@ -282,7 +274,7 @@ const Profile = () => {
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View className="items-center mt-6">
           <Image source={icons.profile} className="w-[100px] h-[100px]" resizeMode="contain" />
-          <Text className="text-2xl text-white font-semibold mt-4">{user?.nombre || 'Usuario'}</Text>
+          <Text className="text-2xl text-white font-semibold mt-4">{user?.sexo === "Masculino" ? "Dr." : "Dra."} {user?.nombre || 'Usuario'}</Text>
         </View>
 
         <View className="flex-row justify-center mt-6 border-b border-gray-700 mx-4">
@@ -292,15 +284,6 @@ const Profile = () => {
           >
             <Text className={`text-lg ${activeTab === 'info' ? 'text-terciary font-semibold' : 'text-gray-400'}`}>
               Info.
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            className={`px-6 pb-3 ${activeTab === 'medicamentos' ? 'border-b-2 border-terciary' : ''}`}
-            onPress={() => setActiveTab('medicamentos')}
-          >
-            <Text className={`text-lg ${activeTab === 'medicamentos' ? 'text-terciary font-semibold' : 'text-gray-400'}`}>
-              Medicamentos
             </Text>
           </TouchableOpacity>
 
