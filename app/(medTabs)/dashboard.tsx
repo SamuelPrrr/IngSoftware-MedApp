@@ -5,6 +5,8 @@ import { icons } from '@/constants';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import PatientCard from '@/components/PatientCard';
+
 
 type Cita = {
   id: string;
@@ -26,6 +28,18 @@ type Horario = {
   disponible: boolean;
 };
 
+type Paciente = {
+  idUsuario: number;
+  nombre: string;
+  correo: string;
+  telefono: string;
+  sexo: string;
+  edad: number
+  altura?: number;
+  peso?: number;
+  imageUrl?: string;
+}
+
 const DoctorDashboard = () => {
   const router = useRouter();
   const [activeSection, setActiveSection] = useState<'citas' | 'pacientes' | 'horarios'>('citas');
@@ -37,6 +51,9 @@ const DoctorDashboard = () => {
     horaInicio: '08:00',
     horaFin: '17:00'
   });
+  
+  //Lo ponemos en arreglo
+  const [pacientes, setPacientes] = useState<Paciente[]>([]);
 
   // Obtener citas del médico
   const fetchCitas = async () => {
@@ -76,6 +93,24 @@ const DoctorDashboard = () => {
     }
   };
 
+  const fetchPacientes = async ()=> {
+      try{
+        const token = await AsyncStorage.getItem('authToken');
+        const response = await axios.get('http://localhost:8080/api/medicos/pacientes', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if(response.data.error){
+          Alert.alert('Error', response.data.message);
+        } else {
+          setPacientes(response.data);
+        }
+      console.log(response.data)
+      } catch (error){
+        console.log(error);
+      }
+  };
+ 
   // Confirmar cita y redirigir a receta médica (Falta esto)
   const confirmarCita = (citaId: string) => {
     //router.push(`/receta-medica?citaId=${citaId}`);
@@ -147,11 +182,15 @@ const DoctorDashboard = () => {
     );
   };
 
+  
+
   useEffect(() => {
     if (activeSection === 'citas') {
       fetchCitas();
     } else if (activeSection === 'horarios') {
       fetchHorarios();
+    } else if(activeSection === 'pacientes'){
+      fetchPacientes();
     }
   }, [activeSection]);
 
@@ -290,11 +329,21 @@ const DoctorDashboard = () => {
         )}
 
         {activeSection === 'pacientes' && (
-          <View className="mt-1">
-            <Text className="text-white text-lg">Lista de Pacientes</Text>
-            {/* Contenido de pacientes... */}
-          </View>
-        )}
+  <View className="mt-1">
+    <Text className="text-white text-lg font-bold mb-4">Mis Pacientes</Text>
+    
+    {pacientes.length === 0 ? (
+      <Text className="text-gray-400 text-center my-4">No hay pacientes registrados</Text>) : (
+        pacientes.map((paciente) => (
+        <PatientCard 
+          key={paciente.idUsuario}
+          patient={paciente}
+          //onPress={() => router.push(`/paciente-detalle/${paciente.idUsuario}`)}
+        />
+      ))
+    )}
+  </View>
+    )}
       </ScrollView>
 
       {/* Modal para agregar nuevo horario */}

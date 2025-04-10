@@ -30,6 +30,7 @@ import doctorFemale from "../assets/icons/doctorFemale.png";
 import clock from "../assets/icons/clock.png";
 import checkmark from "../assets/icons/checkmark.png";
 import close from "../assets/icons/close.png";
+import phone from "../assets/icons/phone.png"
 
 export default {
   logo,
@@ -63,5 +64,6 @@ export default {
   doctorFemale,
   clock,
   checkmark, 
-  close
+  close,
+  phone
 };
