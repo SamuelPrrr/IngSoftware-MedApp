@@ -3,15 +3,15 @@ import { icons } from '@/constants';
 
 type PatientCardProps = {
     patient: {
-      idUsuario: number;  // Cambiado de 'id' (string) a 'idUsuario' (number)
-      nombre: string;     // Cambiado de 'name' a 'nombre'
+      idUsuario: number;  
+      nombre: string;     
       edad: number;
-      sexo: string;       // Relajado a string en lugar de tipo específico
+      sexo: string;     
       telefono: string;
       altura?: number;
       peso?: number;
       imageUrl?: string;
-      correo?: string;    // Agregado para coincidir con tu tipo
+      correo?: string;    
     };
     isSelected?: boolean;
     onPress?: () => void;
@@ -44,8 +44,8 @@ const PatientCard = ({
         {/* Imagen del paciente */}
         <Image
           source={patient.imageUrl ? { uri: patient.imageUrl } : 
-                  patient.sexo === 'Femenino' ? icons.profile2 : icons.profile2}
-          className="w-12 h-12 mr-3 rounded-full"
+                  patient.sexo === 'Femenino' ? icons.profile : icons.profile}
+          className="w-12 h-12 mr-3 rounded-full justify-center" 
           resizeMode="cover"
         />
         

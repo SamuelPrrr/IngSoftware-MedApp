@@ -7,7 +7,6 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import PatientCard from '@/components/PatientCard';
 
-
 type Cita = {
   id: string;
   fechaHora: string;
@@ -34,7 +33,7 @@ type Paciente = {
   correo: string;
   telefono: string;
   sexo: string;
-  edad: number
+  edad: number;
   altura?: number;
   peso?: number;
   imageUrl?: string;
@@ -51,9 +50,9 @@ const DoctorDashboard = () => {
     horaInicio: '08:00',
     horaFin: '17:00'
   });
-  
-  //Lo ponemos en arreglo
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchMode, setSearchMode] = useState(false);
 
   // Obtener citas del médico
   const fetchCitas = async () => {
@@ -93,25 +92,55 @@ const DoctorDashboard = () => {
     }
   };
 
-  const fetchPacientes = async ()=> {
-      try{
-        const token = await AsyncStorage.getItem('authToken');
-        const response = await axios.get('http://localhost:8080/api/medicos/pacientes', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+  const fetchAllPacientes = async () => {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const response = await axios.get('http://localhost:8080/api/medicos/pacientes', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-        if(response.data.error){
-          Alert.alert('Error', response.data.message);
+      if (response.data.error) {
+        Alert.alert('Error', response.data.message);
+      } else {
+        // Filtra los pacientes según la búsqueda
+        const allPacientes = response.data.data || response.data;
+        if (searchQuery.length > 0) {
+          const filtered = allPacientes.filter((paciente: Paciente) =>
+            paciente.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            paciente.telefono.includes(searchQuery)
+          );
+          setPacientes(filtered);
         } else {
-          setPacientes(response.data);
+          setPacientes(allPacientes);
         }
-      console.log(response.data)
-      } catch (error){
-        console.log(error);
       }
+    } catch (error) {
+      console.error('Error al obtener todos los pacientes:', error);
+      Alert.alert('Error', 'No se pudieron cargar los pacientes');
+      setPacientes([]);
+    }
   };
- 
-  // Confirmar cita y redirigir a receta médica (Falta esto)
+
+  const fetchPacientesByMedico = async () => {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const response = await axios.get('http://localhost:8080/api/medicos/citas/pacientes', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.data.error) {
+        Alert.alert('Error', response.data.message);
+      } else {
+        setPacientes(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error al obtener pacientes del médico:', error);
+      Alert.alert('Error', 'No se pudieron cargar los pacientes');
+      setPacientes([]);
+    }
+  };
+
+  // Confirmar cita y redirigir a receta médica
   const confirmarCita = (citaId: string) => {
     //router.push(`/receta-medica?citaId=${citaId}`);
   };
@@ -182,17 +211,21 @@ const DoctorDashboard = () => {
     );
   };
 
-  
-
   useEffect(() => {
     if (activeSection === 'citas') {
       fetchCitas();
     } else if (activeSection === 'horarios') {
       fetchHorarios();
-    } else if(activeSection === 'pacientes'){
-      fetchPacientes();
+    } else if (activeSection === 'pacientes') {
+      if (searchQuery.length > 0) {
+        setSearchMode(true);
+        fetchAllPacientes();
+      } else {
+        setSearchMode(false);
+        fetchPacientesByMedico();
+      }
     }
-  }, [activeSection]);
+  }, [activeSection, searchQuery]);
 
   const formatearDia = (dia: string) => {
     const dias: Record<string, string> = {
@@ -329,21 +362,77 @@ const DoctorDashboard = () => {
         )}
 
         {activeSection === 'pacientes' && (
-  <View className="mt-1">
-    <Text className="text-white text-lg font-bold mb-4">Mis Pacientes</Text>
-    
-    {pacientes.length === 0 ? (
-      <Text className="text-gray-400 text-center my-4">No hay pacientes registrados</Text>) : (
-        pacientes.map((paciente) => (
-        <PatientCard 
-          key={paciente.idUsuario}
-          patient={paciente}
-          //onPress={() => router.push(`/paciente-detalle/${paciente.idUsuario}`)}
-        />
-      ))
-    )}
-  </View>
-    )}
+          <View className="mt-4">
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-white text-xl font-bold">
+                {searchMode ? 'Búsqueda en todos los pacientes' : 'Mis Pacientes'}
+              </Text>
+              
+              {/* Search Bar */}
+              <View className="bg-white rounded-full flex-1 ml-4 border border-gray-300">
+                <View className="flex-row items-center px-4 py-2">
+                  <Image 
+                    source={icons.search} 
+                    className="w-4 h-4 mr-2" 
+                    style={{ tintColor: '#6B7280' }}
+                  />
+                  <TextInput
+                    placeholder="Buscar paciente..."
+                    placeholderTextColor="#9CA3AF"
+                    className="text-gray-800 flex-1"
+                    value={searchQuery}
+                    onChangeText={(text) => {
+                      setSearchQuery(text);
+                      if (text.length > 0) {
+                        setSearchMode(true);
+                      } else {
+                        setSearchMode(false);
+                      }
+                    }}
+                  />
+                  {searchQuery && (
+                    <TouchableOpacity onPress={() => {
+                      setSearchQuery('');
+                      setSearchMode(false);
+                      fetchPacientesByMedico();
+                    }}>
+                      <Image 
+                        source={icons.close} 
+                        className="w-4 h-4" 
+                        style={{ tintColor: '#6B7280' }}
+                      />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            </View>
+
+            {/* Lista de pacientes */}
+            {pacientes.length === 0 ? (
+              <View className="bg-white rounded-lg p-6 border border-gray-200">
+                <Text className="text-gray-500 text-center">
+                  {searchQuery ? 'No se encontraron pacientes' : 'No hay pacientes registrados'}
+                </Text>
+              </View>
+            ) : (
+              pacientes.map((paciente) => (
+                <View key={paciente.idUsuario} className="mb-3">
+                  <PatientCard 
+                    patient={{
+                      idUsuario: paciente.idUsuario,
+                      nombre: paciente.nombre,
+                      edad: paciente.edad || 0,
+                      sexo: paciente.sexo,
+                      telefono: paciente.telefono,
+                      altura: paciente.altura,
+                      peso: paciente.peso
+                    }}
+                  />
+                </View>
+              ))
+            )}
+          </View>
+        )}
       </ScrollView>
 
       {/* Modal para agregar nuevo horario */}
