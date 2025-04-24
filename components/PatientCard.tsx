@@ -51,7 +51,7 @@ const PatientCard = ({
         
         <View className="flex-1">
           <Text className="text-white font-semibold text-lg">
-            {titulo} {patient.nombre}
+            {patient.nombre}
           </Text>
 
           <View className="flex-row items-center mt-1">

@@ -52,7 +52,23 @@ const DoctorDashboard = () => {
   });
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchQueryCitas, setSearchQueryCitas] = useState('');
   const [searchMode, setSearchMode] = useState(false);
+
+  // Función para eliminar pacientes duplicados
+  const eliminarDuplicados = (pacientes: Paciente[]): Paciente[] => {
+    const pacientesUnicos: Paciente[] = [];
+    const idsUnicos = new Set<number>();
+
+    pacientes.forEach(paciente => {
+      if (!idsUnicos.has(paciente.idUsuario)) {
+        idsUnicos.add(paciente.idUsuario);
+        pacientesUnicos.push(paciente);
+      }
+    });
+
+    return pacientesUnicos;
+  };
 
   // Obtener citas del médico
   const fetchCitas = async () => {
@@ -102,16 +118,17 @@ const DoctorDashboard = () => {
       if (response.data.error) {
         Alert.alert('Error', response.data.message);
       } else {
-        // Filtra los pacientes según la búsqueda
         const allPacientes = response.data.data || response.data;
+        const pacientesUnicos = eliminarDuplicados(allPacientes);
+        
         if (searchQuery.length > 0) {
-          const filtered = allPacientes.filter((paciente: Paciente) =>
+          const filtered = pacientesUnicos.filter((paciente: Paciente) =>
             paciente.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
             paciente.telefono.includes(searchQuery)
           );
           setPacientes(filtered);
         } else {
-          setPacientes(allPacientes);
+          setPacientes(pacientesUnicos);
         }
       }
     } catch (error) {
@@ -131,7 +148,8 @@ const DoctorDashboard = () => {
       if (response.data.error) {
         Alert.alert('Error', response.data.message);
       } else {
-        setPacientes(response.data.data);
+        const pacientesUnicos = eliminarDuplicados(response.data.data);
+        setPacientes(pacientesUnicos);
       }
     } catch (error) {
       console.error('Error al obtener pacientes del médico:', error);
@@ -139,6 +157,13 @@ const DoctorDashboard = () => {
       setPacientes([]);
     }
   };
+
+  // Filtrar citas basado en la búsqueda
+  const filteredCitas = citas.filter(cita =>
+    cita.paciente.nombre.toLowerCase().includes(searchQueryCitas.toLowerCase()) ||
+    cita.motivo?.toLowerCase().includes(searchQueryCitas.toLowerCase()) ||
+    cita.estado.toLowerCase().includes(searchQueryCitas.toLowerCase())
+  );
 
   // Confirmar cita y redirigir a receta médica
   const confirmarCita = (citaId: string) => {
@@ -287,12 +312,43 @@ const DoctorDashboard = () => {
       {/* Contenido principal */}
       <ScrollView className="flex-1 px-4 pt-2">
         {activeSection === 'citas' && (
-          <View>
-            <Text className="text-white text-lg mb-2">Próximas citas</Text>
-            {citas.length === 0 ? (
-              <Text className="text-gray-400 text-center my-4">No hay citas programadas</Text>
+          <View className='mt-4'>
+            <View className='flex-row items-center justify-between mb-4'>
+              <Text className="text-white text-xl font-bold">Próximas citas</Text>
+              {/* Search Bar para citas */}
+              <View className="bg-white rounded-full flex-1 ml-4 border border-gray-300">
+                <View className="flex-row items-center px-4 py-2">
+                  <Image 
+                    source={icons.search} 
+                    className="w-4 h-4 mr-2" 
+                    style={{ tintColor: '#6B7280' }}
+                  />
+                  <TextInput
+                    placeholder="Buscar cita..."
+                    placeholderTextColor="#9CA3AF"
+                    className="text-gray-800 flex-1"
+                    value={searchQueryCitas}
+                    onChangeText={setSearchQueryCitas}
+                  />
+                  {searchQueryCitas && (
+                    <TouchableOpacity onPress={() => setSearchQueryCitas('')}>
+                      <Image 
+                        source={icons.close} 
+                        className="w-4 h-4" 
+                        style={{ tintColor: '#6B7280' }}
+                      />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            </View>
+            
+            {filteredCitas.length === 0 ? (
+              <Text className="text-gray-400 text-center my-4">
+                {searchQueryCitas ? 'No se encontraron citas' : 'No hay citas programadas'}
+              </Text>
             ) : (
-              citas.map((cita) => (
+              filteredCitas.map((cita) => (
                 <View key={cita.id} className="bg-black-200 p-4 rounded-lg mb-3">
                   <View className="flex-row justify-between items-center">
                     <View className="flex-1">
@@ -305,6 +361,13 @@ const DoctorDashboard = () => {
                       <Text className="text-gray-400">
                         Motivo: {cita.motivo || 'No especificado'}
                       </Text>
+                      <Text className={`text-sm ${
+                      cita.estado === 'CONFIRMADA' ? 'text-terciary' :
+                      cita.estado === 'COMPLETADA' ? 'text-gray-500' :
+                      cita.estado === 'CANCELADA' ? 'text-error' : 'text-yellow-500'
+                    }`}>
+                      Estado: {cita.estado}
+                    </Text>
                     </View>
                     <TouchableOpacity 
                       className="bg-terciary px-4 py-2 rounded-lg"
@@ -325,7 +388,20 @@ const DoctorDashboard = () => {
               <Text className="text-white text-lg">Mis Horarios</Text>
               <TouchableOpacity 
                 className="bg-terciary px-4 py-2 rounded-lg"
-                onPress={() => setShowModal(true)}
+                onPress={() => {
+                  if (horarios.length > 0) {
+                    Alert.alert(
+                      'Advertencia',
+                      'Si agregas un nuevo horario para un día existente, el horario anterior será reemplazado automáticamente.',
+                      [
+                        { text: 'Cancelar', style: 'cancel' },
+                        { text: 'Continuar', onPress: () => setShowModal(true) },
+                      ]
+                    );
+                  } else {
+                    setShowModal(true);
+                  }
+                }}
               >
                 <Text className="text-black">Agregar Horario</Text>
               </TouchableOpacity>
@@ -365,7 +441,7 @@ const DoctorDashboard = () => {
           <View className="mt-4">
             <View className="flex-row items-center justify-between mb-4">
               <Text className="text-white text-xl font-bold">
-                {searchMode ? 'Búsqueda en todos los pacientes' : 'Mis Pacientes'}
+                {searchMode ? 'Todos' : 'Mis Pacientes'}
               </Text>
               
               {/* Search Bar */}
@@ -416,19 +492,18 @@ const DoctorDashboard = () => {
               </View>
             ) : (
               pacientes.map((paciente) => (
-                <View key={paciente.idUsuario} className="mb-3">
-                  <PatientCard 
-                    patient={{
-                      idUsuario: paciente.idUsuario,
-                      nombre: paciente.nombre,
-                      edad: paciente.edad || 0,
-                      sexo: paciente.sexo,
-                      telefono: paciente.telefono,
-                      altura: paciente.altura,
-                      peso: paciente.peso
-                    }}
-                  />
-                </View>
+                <PatientCard 
+                  key={`patient-${paciente.idUsuario}`}
+                  patient={{
+                    idUsuario: paciente.idUsuario,
+                    nombre: paciente.nombre,
+                    edad: paciente.edad || 0,
+                    sexo: paciente.sexo,
+                    telefono: paciente.telefono,
+                    altura: paciente.altura,
+                    peso: paciente.peso
+                  }}
+                />
               ))
             )}
           </View>
