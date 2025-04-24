@@ -385,7 +385,7 @@ const DoctorDashboard = () => {
         {activeSection === 'horarios' && (
           <View className="mt-5">
             <View className="flex-row justify-between items-center mb-4">
-              <Text className="text-white text-lg">Mis Horarios</Text>
+              <Text className="text-white text-xl font-bold">Mis Horarios</Text>
               <TouchableOpacity 
                 className="bg-terciary px-4 py-2 rounded-lg"
                 onPress={() => {
