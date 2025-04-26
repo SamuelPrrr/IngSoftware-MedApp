@@ -167,7 +167,7 @@ const DoctorDashboard = () => {
 
   // Confirmar cita y redirigir a receta médica
   const confirmarCita = (citaId: string) => {
-    //router.push(`/receta-medica?citaId=${citaId}`);
+    router.push(`/receta-medica?citaId=${citaId}`);
   };
 
   // Agregar nuevo horario
@@ -362,8 +362,8 @@ const DoctorDashboard = () => {
                         Motivo: {cita.motivo || 'No especificado'}
                       </Text>
                       <Text className={`text-sm ${
-                      cita.estado === 'CONFIRMADA' ? 'text-terciary' :
-                      cita.estado === 'COMPLETADA' ? 'text-gray-500' :
+                      cita.estado === 'CONFIRMADA' ? 'text-yellow-500' :
+                      cita.estado === 'COMPLETADA' ? 'text-terciary' :
                       cita.estado === 'CANCELADA' ? 'text-error' : 'text-yellow-500'
                     }`}>
                       Estado: {cita.estado}
