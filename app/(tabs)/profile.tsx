@@ -1,5 +1,5 @@
 import { View, Text, Image, ScrollView, StatusBar, Alert, TouchableOpacity } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { icons } from '../../constants';
 import { useRouter } from 'expo-router';
@@ -18,6 +18,7 @@ interface User {
   peso: string;
   edad: string;
   sexo: string;
+  idUsuario?: number;
 }
 
 interface Appointment {
@@ -32,44 +33,79 @@ interface Appointment {
   motivo: string;
 }
 
+interface MedicamentoRecetado {
+  idMedicamentoEnReceta: number;
+  medicamento: {
+    idMedicamento: number;
+    nombre: string;
+    presentacion: string;
+    tipo: string;
+  };
+  frecuencia: string;
+  numeroDias: number;
+  cantidadDosis: string;
+  dosisActual: number;
+  numDosis: number;
+  receta: {
+    idReceta: number;
+    anotaciones: string;
+    cita: {
+      idCita: number;
+      fechaHora: string;
+      estado: string;
+    };
+  };
+  proximaDosis?: string;
+  tiempoRestante?: string;
+}
+
 const Profile = () => {
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('info');
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [medicamentos, setMedicamentos] = useState<MedicamentoRecetado[]>([]);
+  const [activeMedicamento, setActiveMedicamento] = useState<number | null>(null);
+  const [timers, setTimers] = useState<Record<number, NodeJS.Timeout>>({});
   const router = useRouter();
 
-  const updateData = async () => {
-    if (!user) {
-      Alert.alert('Error', 'Intentalo mas tarde');
-      return;
-    }
-  };
-
-  const fetchUserData = async () => {
+  // 1. Función para obtener y guardar el ID del usuario
+  const getUserId = async (): Promise<number> => {
     try {
       const token = await AsyncStorage.getItem('authToken');
-      if (!token) {
-        Alert.alert('Error', 'No se encontró el token de autenticación');
-        return;
-      }
-
-      const response = await axios.get('http://localhost:8080/api/pacientes/profile', { 
+      const response = await axios.get('http://localhost:8080/api/pacientes/profile', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (response.data.error) {
-        Alert.alert('Error', response.data.message);
-        return;
+      if (!response.data.data?.idUsuario) {
+        throw new Error("ID de usuario no encontrado en la respuesta");
       }
 
-      setUser(response.data.data);
+      await AsyncStorage.setItem('userId', response.data.data.idUsuario.toString());
+      return response.data.data.idUsuario;
     } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'No se pudo obtener la información del usuario');
+      console.error('Error al obtener ID:', error);
+      throw error;
     }
   };
 
+  // 2. Cargar datos del usuario
+  const fetchUserData = async () => {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const response = await axios.get('http://localhost:8080/api/pacientes/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setUser(response.data.data);
+      console.log("Datos de usuario cargados:", response.data.data);
+    } catch (error) {
+      console.error('Error al cargar usuario:', error);
+      Alert.alert('Error', 'No se pudo cargar la información del usuario');
+    }
+  };
+
+  // 3. Cargar citas
   const fetchAppointments = async () => {
     try {
       const token = await AsyncStorage.getItem('authToken');
@@ -85,16 +121,148 @@ const Profile = () => {
           especialidad: cita.medico.especialidad,
           id: cita.medico.id
         },
-        estado: cita.estado as AppointmentStatus, // Usamos el tipo directamente
+        estado: cita.estado as AppointmentStatus,
         motivo: cita.motivo
       }));
       
       setAppointments(mappedAppointments);
     } catch (error: any) {
-      console.error(error);
-      Alert.alert('Error', error.response?.data?.message || 'No se pudieron cargar las citas');
+      console.error('Error al cargar citas:', error);
+      Alert.alert('Error', error.response?.data?.message || 'Error al cargar citas');
     }
   };
+
+  // 4. Cargar medicamentos (con useCallback para evitar recreación)
+  const fetchMedicamentos = useCallback(async () => {
+    try {
+      const userId = await getUserId();
+      console.log("ID obtenido para medicamentos:", userId);
+      
+      const token = await AsyncStorage.getItem('authToken');
+      const response = await axios.get(
+        `http://localhost:8080/api/recetas/paciente/${userId}`,
+        { 
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          } 
+        }
+      );
+
+      console.log("Respuesta de medicamentos:", response.data);
+      
+      if (response.data.error) {
+        throw new Error(response.data.message);
+      }
+
+      const medicamentosConTemporizador = response.data.data.map((med: any) => ({
+        ...med,
+        proximaDosis: calcularProximaDosis(med.frecuencia),
+        tiempoRestante: calcularTiempoRestante(med.frecuencia)
+      }));
+      
+      setMedicamentos(medicamentosConTemporizador);
+      iniciarTemporizadores(medicamentosConTemporizador);
+    } catch (error) {
+      console.error('Error al cargar medicamentos:', error);
+      Alert.alert('Error', 'No se pudieron cargar los medicamentos');
+    }
+  }, []);
+
+  // 5. Funciones auxiliares para medicamentos
+  const calcularProximaDosis = (frecuencia: string): string => {
+    const [horas] = frecuencia.split(':').map(Number);
+    const ahora = new Date();
+    ahora.setHours(ahora.getHours() + horas);
+    return ahora.toISOString();
+  };
+
+  const calcularTiempoRestante = (frecuencia: string): string => {
+    const [horas] = frecuencia.split(':').map(Number);
+    const ahora = new Date();
+    const proxima = new Date(ahora);
+    proxima.setHours(ahora.getHours() + horas);
+    
+    const diff = proxima.getTime() - ahora.getTime();
+    const horasRestantes = Math.floor(diff / (1000 * 60 * 60));
+    const minutosRestantes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    return `${horasRestantes}h ${minutosRestantes}m`;
+  };
+
+  const iniciarTemporizadores = (meds: MedicamentoRecetado[]) => {
+    Object.values(timers).forEach(clearInterval);
+    
+    const nuevosTimers: Record<number, NodeJS.Timeout> = {};
+    
+    meds.forEach(med => {
+      const timer = setInterval(() => {
+        setMedicamentos(prev => prev.map(m => 
+          m.idMedicamentoEnReceta === med.idMedicamentoEnReceta
+            ? { ...m, tiempoRestante: calcularTiempoRestante(m.frecuencia) }
+            : m
+        ));
+      }, 60000);
+      
+      nuevosTimers[med.idMedicamentoEnReceta] = timer;
+    });
+    
+    setTimers(nuevosTimers);
+  };
+
+  // 6. Registrar dosis tomada
+  const registrarDosisTomada = async (idMedicamentoRecetado: number) => {
+    try {
+      setIsSubmitting(true);
+      const token = await AsyncStorage.getItem('authToken');
+      const response = await axios.put(
+        `http://localhost:8080/api/recetas/${idMedicamentoRecetado}/dosis`,
+        null,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.data.error) {
+        throw new Error(response.data.message);
+      }
+      
+      setMedicamentos(prev => prev.map(med => 
+        med.idMedicamentoEnReceta === idMedicamentoRecetado
+          ? { 
+              ...med, 
+              dosisActual: med.dosisActual + 1,
+              proximaDosis: calcularProximaDosis(med.frecuencia),
+              tiempoRestante: calcularTiempoRestante(med.frecuencia)
+            }
+          : med
+      ));
+      
+      Alert.alert('Éxito', 'Dosis registrada correctamente');
+    } catch (error) {
+      console.error('Error al registrar dosis:', error);
+      Alert.alert('Error', 'No se pudo registrar la dosis');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 7. Efecto principal para carga inicial
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        await fetchUserData();
+        await fetchAppointments();
+        await fetchMedicamentos();
+      } catch (error) {
+        console.error('Error en carga inicial:', error);
+      }
+    };
+    
+    loadData();
+
+    return () => {
+      Object.values(timers).forEach(clearInterval);
+    };
+  }, [fetchMedicamentos]);
 
   const handleConfirmAppointment = async (appointmentId: string) => {
     setIsSubmitting(true);
@@ -163,12 +331,15 @@ const Profile = () => {
       setIsSubmitting(false);
     }
   };
+  
+  const updateData = async () => {
+    if (!user) {
+      Alert.alert('Error', 'Intentalo mas tarde');
+      return;
+    }
+  };
 
-  useEffect(() => {
-    fetchUserData();
-    fetchAppointments();
-  }, []);
-
+  //Renderizado de contenido
   const renderContent = () => {
     switch (activeTab) {
       case 'info':
@@ -230,22 +401,69 @@ const Profile = () => {
               <Text className="text-lg text-gray-400 text-center mt-8">Cargando información...</Text>
             )}
 
-          <CustomButton 
-          title="Actualizar datos"
-          handlePress={updateData}
-          containerStyles="mt-10 w-2/4 mx-auto"
-          isLoading={isSubmitting}
-          />
+            <CustomButton 
+              title="Actualizar datos"
+              handlePress={updateData}
+              containerStyles="mt-10 w-2/4 mx-auto"
+              isLoading={isSubmitting}
+            />
           </View>
         );
+
       case 'medicamentos':
         return (
-          <View className="w-full px-10 mt-8 items-center">
-            <View className="w-full max-w-md">
-              <Text className="text-lg text-white font-medium text-center">Aquí irá la lista de medicamentos</Text>
-            </View>
+          <View className="w-full px-4 mt-4">
+            {medicamentos.length === 0 ? (
+              <Text className="text-gray-400 text-center mt-8">No tienes medicamentos recetados</Text>
+            ) : (
+              <ScrollView className="mb-20">
+                {medicamentos.map(med => (
+                  <View 
+                    key={med.idMedicamentoEnReceta} 
+                    className={`bg-black-200 p-4 rounded-lg mb-3 ${activeMedicamento === med.idMedicamentoEnReceta ? 'border-2 border-terciary' : ''}`}
+                  >
+                    <View className="flex-row justify-between items-center mb-2">
+                      <Text className="text-lg font-semibold text-white">{med.medicamento.nombre}</Text>
+                      <Text className="text-gray-300">{med.medicamento.presentacion}</Text>
+                    </View>
+                    
+                    <View className="flex-row justify-between mb-1">
+                      <Text className="text-gray-400">Tipo:</Text>
+                      <Text className="text-white">{med.medicamento.tipo}</Text>
+                    </View>
+                    
+                    <View className="flex-row justify-between mb-1">
+                      <Text className="text-gray-400">Frecuencia:</Text>
+                      <Text className="text-white">Cada {med.frecuencia.split(':')[0]} horas</Text>
+                    </View>
+                    
+                    <View className="flex-row justify-between mb-1">
+                      <Text className="text-gray-400">Próxima dosis:</Text>
+                      <Text className="text-white">{med.tiempoRestante}</Text>
+                    </View>
+                    
+                    <View className="flex-row justify-between mb-3">
+                      <Text className="text-gray-400">Progreso:</Text>
+                      <Text className="text-white">{med.dosisActual} / {med.numDosis} dosis</Text>
+                    </View>
+                    
+                    <CustomButton
+                      title="Registrar dosis tomada"
+                      handlePress={() => registrarDosisTomada(med.idMedicamentoEnReceta)}
+                      containerStyles="mt-2"
+                      isLoading={isSubmitting}
+                    />
+                    
+                    {med.dosisActual >= med.numDosis && (
+                      <Text className="text-green-500 text-center mt-2">¡Tratamiento completado!</Text>
+                    )}
+                  </View>
+                ))}
+              </ScrollView>
+            )}
           </View>
         );
+
       case 'citas':
         return (
           <View className="w-full mt-4">
@@ -272,6 +490,7 @@ const Profile = () => {
             )}
           </View>
         );
+
       default:
         return null;
     }
@@ -315,7 +534,6 @@ const Profile = () => {
         </View>
 
         {renderContent()}
-
       </ScrollView>
       <StatusBar backgroundColor={'#161622'} />
     </SafeAreaView>
