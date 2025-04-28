@@ -1,4 +1,4 @@
-import { View, Text, Image, ScrollView, StatusBar, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, Image, ScrollView, StatusBar, Alert, TouchableOpacity, TextInput } from 'react-native';
 import React, { useEffect, useState, useCallback } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { icons } from '../../constants';
@@ -18,6 +18,7 @@ interface User {
   peso: string;
   edad: string;
   sexo: string;
+  direccion?: string;  // Añadir dirección
   idUsuario?: number;
 }
 
@@ -68,6 +69,13 @@ const Profile = () => {
   const [activeMedicamento, setActiveMedicamento] = useState<number | null>(null);
   const [timers, setTimers] = useState<Record<number, NodeJS.Timeout>>({});
   const router = useRouter();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedData, setEditedData] = useState({
+  altura: '',
+  peso: '',
+  edad: '',
+  direccion: ''
+});
 
   // 1. Función para obtener y guardar el ID del usuario
   const getUserId = async (): Promise<number> => {
@@ -332,10 +340,60 @@ const Profile = () => {
     }
   };
   
+
   const updateData = async () => {
     if (!user) {
-      Alert.alert('Error', 'Intentalo mas tarde');
+      Alert.alert('Error', 'Intentalo más tarde');
       return;
+    }
+  
+    if (!isEditing) {
+      // Entrar en modo edición
+      setIsEditing(true);
+      setEditedData({
+        altura: user.altura || '',
+        peso: user.peso || '',
+        edad: user.edad || '',
+        direccion: user.direccion || ''
+      });
+      return;
+    }
+  
+    // Enviar datos actualizados
+    setIsSubmitting(true);
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const response = await axios.put(
+        'http://localhost:8080/api/pacientes/actualizar-datos',
+        editedData,
+        {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+  
+      if (response.data.error) {
+        throw new Error(response.data.message);
+      }
+  
+      // Actualizar el estado del usuario con los nuevos datos
+      setUser(prev => prev ? {
+        ...prev,
+        altura: editedData.altura,
+        peso: editedData.peso,
+        edad: editedData.edad,
+        direccion: editedData.direccion
+      } : null);
+  
+      Alert.alert('Éxito', 'Datos actualizados correctamente');
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error al actualizar datos:', error);
+      Alert.alert('Error', 'No se pudieron actualizar los datos');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -347,6 +405,7 @@ const Profile = () => {
           <View className="w-full px-6 mt-6">
             {user ? (
               <View className="space-y-4">
+                {/* Campo Correo (no editable) */}
                 <View className="flex-row justify-between items-center bg-black-200 p-4 rounded-lg">
                   <View className="flex-row items-center">
                     <Image source={icons.mail} className="w-5 h-5 mr-2" resizeMode="contain" />
@@ -354,7 +413,8 @@ const Profile = () => {
                   </View>
                   <Text className="text-base font-normal text-gray-300">{user.correo}</Text>
                 </View>
-
+      
+                {/* Campo Sexo (no editable) */}
                 <View className="flex-row justify-between items-center bg-black-200 p-4 rounded-lg">
                   <View className="flex-row items-center">
                     <Image
@@ -366,47 +426,128 @@ const Profile = () => {
                   </View>
                   <Text className="text-base font-normal text-gray-300">{user.sexo}</Text>
                 </View>
-
+      
+                {/* Campo Altura (editable) */}
                 <View className="flex-row justify-between items-center bg-black-200 p-4 rounded-lg">
                   <View className="flex-row items-center">
                     <Image source={icons.foot} className="w-5 h-5 mr-2" resizeMode="contain" />
-                    <Text className="text-base font-medium text-gray-100">Altura:</Text>
+                    <Text className="text-base font-medium text-gray-100">Altura (cm):</Text>
                   </View>
-                  <Text className="text-base font-normal text-gray-300">
-                    {user.altura || 'No especificado'}
-                  </Text>
+                  {isEditing ? (
+                    <TextInput
+                      className="text-base font-normal text-gray-300 bg-black-300 px-2 py-1 rounded w-20 text-right"
+                      value={editedData.altura}
+                      onChangeText={(text: any) => setEditedData({...editedData, altura: text})}
+                      placeholder="Ej. 175"
+                      keyboardType="numeric"
+                    />
+                  ) : (
+                    <Text className="text-base font-normal text-gray-300">
+                      {user.altura ? `${user.altura} cm` : 'No especificado'}
+                    </Text>
+                  )}
                 </View>
-
+      
+                {/* Campo Peso (editable) */}
                 <View className="flex-row justify-between items-center bg-black-200 p-4 rounded-lg">
                   <View className="flex-row items-center">
                     <Image source={icons.weight} className="w-5 h-5 mr-2" resizeMode="contain" />
-                    <Text className="text-base font-medium text-gray-100">Peso:</Text>
+                    <Text className="text-base font-medium text-gray-100">Peso (kg):</Text>
                   </View>
-                  <Text className="text-base font-normal text-gray-300">
-                    {user.peso || 'No especificado'}
-                  </Text>
+                  {isEditing ? (
+                    <TextInput
+                      className="text-base font-normal text-gray-300 bg-black-300 px-2 py-1 rounded w-20 text-right"
+                      value={editedData.peso}
+                      onChangeText={(text) => setEditedData({...editedData, peso: text})}
+                      placeholder="Ej. 70"
+                      keyboardType="numeric"
+                    />
+                  ) : (
+                    <Text className="text-base font-normal text-gray-300">
+                      {user.peso ? `${user.peso} kg` : 'No especificado'}
+                    </Text>
+                  )}
                 </View>
-
+      
+                {/* Campo Edad (editable) */}
                 <View className="flex-row justify-between items-center bg-black-200 p-4 rounded-lg">
                   <View className="flex-row items-center">
                     <Image source={icons.date} className="w-5 h-5 mr-2" resizeMode="contain" />
                     <Text className="text-base font-medium text-gray-100">Edad:</Text>
                   </View>
-                  <Text className="text-base font-normal text-gray-300">
-                    {user.edad || 'No especificado'}
-                  </Text>
+                  {isEditing ? (
+                    <TextInput
+                      className="text-base font-normal text-gray-300 bg-black-300 px-2 py-1 rounded w-20 text-right"
+                      value={editedData.edad}
+                      onChangeText={(text) => setEditedData({...editedData, edad: text})}
+                      placeholder="Ej. 30"
+                      keyboardType="numeric"
+                    />
+                  ) : (
+                    <Text className="text-base font-normal text-gray-300">
+                      {user.edad ? `${user.edad} años` : 'No especificado'}
+                    </Text>
+                  )}
+                </View>
+      
+                {/* Campo Dirección (editable) */}
+                <View className="flex-row justify-between items-center bg-black-200 p-4 rounded-lg">
+                  <View className="flex-row items-center">
+                    <Image source={icons.date} className="w-5 h-5 mr-2" resizeMode="contain" />
+                    <Text className="text-base font-medium text-gray-100">Dirección:</Text>
+                  </View>
+                  {isEditing ? (
+                    <TextInput
+                      className="text-base font-normal text-gray-300 bg-black-300 px-2 py-1 rounded flex-1 ml-2"
+                      value={editedData.direccion}
+                      onChangeText={(text) => setEditedData({...editedData, direccion: text})}
+                      placeholder="Ej. Calle Principal 123"
+                      multiline
+                    />
+                  ) : (
+                    <Text className="text-base font-normal text-gray-300 flex-1 text-right">
+                      {user.direccion || 'No especificado'}
+                    </Text>
+                  )}
+                </View>
+      
+                {/* Botón de acción */}
+                <View className="flex-row justify-center space-x-4 mt-6">
+                  {isEditing ? (
+                    <>
+                      <CustomButton 
+                        title="Cancelar"
+                        handlePress={() => setIsEditing(false)}
+                        containerStyles="w-1/3 bg-gray-500"
+                        textStyles="text-white"
+                      />
+                      <CustomButton 
+                        title="Guardar"
+                        handlePress={updateData}
+                        containerStyles="w-1/3"
+                        isLoading={isSubmitting}
+                      />
+                    </>
+                  ) : (
+                    <CustomButton 
+                      title="Editar datos"
+                      handlePress={() => {
+                        setIsEditing(true);
+                        setEditedData({
+                          altura: user.altura || '',
+                          peso: user.peso || '',
+                          edad: user.edad || '',
+                          direccion: user.direccion || ''
+                        });
+                      }}
+                      containerStyles="w-2/4 mx-auto"
+                    />
+                  )}
                 </View>
               </View>
             ) : (
               <Text className="text-lg text-gray-400 text-center mt-8">Cargando información...</Text>
             )}
-
-            <CustomButton 
-              title="Actualizar datos"
-              handlePress={updateData}
-              containerStyles="mt-10 w-2/4 mx-auto"
-              isLoading={isSubmitting}
-            />
           </View>
         );
 

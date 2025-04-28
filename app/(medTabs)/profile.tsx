@@ -1,22 +1,35 @@
-import { View, Text, Image, ScrollView, StatusBar, Alert, TouchableOpacity } from 'react-native';
-import React, { useEffect, useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { icons } from '../../constants';
-import { useRouter } from 'expo-router';
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import CustomButton from '@/components/CustomButton';
-import AppointmentCardDoc from '@/components/AppointmentCardDoc';
+import {
+  View,
+  Text,
+  Image,
+  ScrollView,
+  StatusBar,
+  Alert,
+  TouchableOpacity,
+  TextInput,
+} from "react-native";
+import React, { useEffect, useState } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { icons } from "../../constants";
+import { useRouter } from "expo-router";
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import CustomButton from "@/components/CustomButton";
+import AppointmentCardDoc from "@/components/AppointmentCardDoc";
 
-type TabType = 'info' | 'citas';
-type AppointmentStatus = 'PENDIENTE' | 'CONFIRMADA' | 'COMPLETADA' | 'CANCELADA';
+type TabType = "info" | "citas";
+type AppointmentStatus =
+  | "PENDIENTE"
+  | "CONFIRMADA"
+  | "COMPLETADA"
+  | "CANCELADA";
 
 interface User {
+  idUsuario: number;
   nombre: string;
   correo: string;
-  altura: string;
-  peso: string;
-  edad: string;
+  telefono?: string;
+  especialidad: string;
   sexo: string;
 }
 
@@ -34,135 +47,193 @@ interface Appointment {
 
 const Profile = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [activeTab, setActiveTab] = useState<TabType>('info');
+  const [activeTab, setActiveTab] = useState<TabType>("info");
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedData, setEditedData] = useState({
+    especialidad: "",
+    telefono: "",
+  });
 
   const updateData = async () => {
     if (!user) {
-      Alert.alert('Error', 'Intentalo mas tarde');
+      Alert.alert("Error", "Intentalo más tarde");
       return;
+    }
+
+    if (!isEditing) {
+      // Entrar en modo edición
+      setIsEditing(true);
+      setEditedData({
+        especialidad: user.especialidad || "",
+        telefono: user.telefono || "",
+      });
+      return;
+    }
+
+    // Enviar datos actualizados
+    setIsSubmitting(true);
+    try {
+      const token = await AsyncStorage.getItem("authToken");
+      const response = await axios.put(
+        "http://localhost:8080/api/medicos/actualizar-datos",
+        { especialidad: user.especialidad, telefono: user.telefono },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.error) {
+        throw new Error(response.data.message);
+      }
+
+      // Actualizar el estado del usuario con los nuevos datos
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              especialidad: editedData.especialidad,
+              telefono: editedData.telefono
+            }
+          : null
+      );
+
+      Alert.alert("Éxito", "Datos actualizados correctamente");
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Error al actualizar datos:", error);
+      Alert.alert("Error", "No se pudieron actualizar los datos");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const fetchUserData = async () => {
     try {
-      const token = await AsyncStorage.getItem('authToken');
+      const token = await AsyncStorage.getItem("authToken");
       if (!token) {
-        Alert.alert('Error', 'No se encontró el token de autenticación');
+        Alert.alert("Error", "No se encontró el token de autenticación");
         return;
       }
 
-      const response = await axios.get('http://localhost:8080/api/medicos/profile', { 
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(
+        "http://localhost:8080/api/medicos/profile",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (response.data.error) {
-        Alert.alert('Error', response.data.message);
+        Alert.alert("Error", response.data.message);
         return;
       }
 
       setUser(response.data.data);
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'No se pudo obtener la información del usuario');
+      Alert.alert("Error", "No se pudo obtener la información del médico");
     }
   };
 
   const fetchAppointments = async () => {
     try {
-      const token = await AsyncStorage.getItem('authToken');
-      const response = await axios.get('http://localhost:8080/api/medicos/citas', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
+      const token = await AsyncStorage.getItem("authToken");
+      const response = await axios.get(
+        "http://localhost:8080/api/medicos/citas",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
       const mappedAppointments = response.data.data.map((cita: any) => ({
         id: cita.id.toString(),
         fechaHora: cita.fechaHora,
         paciente: {
           nombre: cita.paciente.nombre,
           sexo: cita.paciente.sexo,
-          id: cita.paciente.id
+          id: cita.paciente.id,
         },
-        estado: cita.estado as AppointmentStatus, // Usamos el tipo directamente
-        motivo: cita.motivo
+        estado: cita.estado as AppointmentStatus,
+        motivo: cita.motivo,
       }));
-      
+
       setAppointments(mappedAppointments);
     } catch (error: any) {
       console.error(error);
-      Alert.alert('Error', error.response?.data?.message || 'No se pudieron cargar las citas');
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "No se pudieron cargar las citas"
+      );
     }
   };
 
-   const handleConfirmAppointment = async (appointmentId: string) => {
-     setIsSubmitting(true);
-     try {
-       const token = await AsyncStorage.getItem('authToken');
-       const response = await axios.put(
-         `http://localhost:8080/api/medicos/citas/${appointmentId}/estado`,
-         null,
-         {
-           params: { nuevoEstado: 'CONFIRMADA' }, // Mayúsculas para coincidir con el enum
-           headers: { Authorization: `Bearer ${token}` }
-         }
-       );
-  
-       if (response.data.error) {
-         Alert.alert('Error', response.data.message);
-       } else {
-         setAppointments(prevAppointments => 
-           prevAppointments.map(appointment => 
-             appointment.id === appointmentId 
-               ? { ...appointment, estado: 'CONFIRMADA' } 
-               : appointment
-           )
-         );
-         Alert.alert('Éxito', 'Cita confirmada correctamente');
-       }
-     } catch (error: any) { // Especificamos el tipo 'any' para evitar el error
-       console.error('Error al confirmar cita:', error);
-       const errorMessage = error.response?.data?.message || 'Error al confirmar la cita';
-       Alert.alert('Error', errorMessage);
-     } finally {
-       setIsSubmitting(false);
-     }
-   };
-  
-   const handleCancelAppointment = async (appointmentId: string) => {
-     setIsSubmitting(true);
-     try {
-       const token = await AsyncStorage.getItem('authToken');
-       const response = await axios.put(
-         `http://localhost:8080/api/medicos/citas/${appointmentId}/estado`,
-         null,
-         {
-           params: { nuevoEstado: 'CANCELADA' }, // Mayúsculas para coincidir con el enum
-           headers: { Authorization: `Bearer ${token}` }
-         }
-       );
-  
-       if (response.data.error) {
-         Alert.alert('Error', response.data.message);
-       } else {
-         setAppointments(prevAppointments => 
-           prevAppointments.map(appointment => 
-             appointment.id === appointmentId 
-               ? { ...appointment, estado: 'CANCELADA' } 
-               : appointment
-           )
-         );
-         Alert.alert('Éxito', 'Cita cancelada correctamente');
-       }
-     } catch (error: any) { // Especificamos el tipo 'any' para evitar el error
-       console.error('Error al cancelar cita:', error);
-       const errorMessage = error.response?.data?.message || 'Error al cancelar la cita';
-       Alert.alert('Error', errorMessage);
-     } finally {
-       setIsSubmitting(false);
-     }
-   };
+  const handleConfirmAppointment = async (appointmentId: string) => {
+    setIsSubmitting(true);
+    try {
+      const token = await AsyncStorage.getItem("authToken");
+      const response = await axios.put(
+        `http://localhost:8080/api/medicos/citas/${appointmentId}/estado`,
+        null,
+        {
+          params: { nuevoEstado: "CONFIRMADA" },
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data.error) {
+        Alert.alert("Error", response.data.message);
+      } else {
+        setAppointments((prev) =>
+          prev.map((app) =>
+            app.id === appointmentId ? { ...app, estado: "CONFIRMADA" } : app
+          )
+        );
+        Alert.alert("Éxito", "Cita confirmada correctamente");
+      }
+    } catch (error: any) {
+      console.error("Error al confirmar cita:", error);
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Error al confirmar la cita"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCancelAppointment = async (appointmentId: string) => {
+    setIsSubmitting(true);
+    try {
+      const token = await AsyncStorage.getItem("authToken");
+      const response = await axios.put(
+        `http://localhost:8080/api/medicos/citas/${appointmentId}/estado`,
+        null,
+        {
+          params: { nuevoEstado: "CANCELADA" },
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data.error) {
+        Alert.alert("Error", response.data.message);
+      } else {
+        setAppointments((prev) =>
+          prev.map((app) =>
+            app.id === appointmentId ? { ...app, estado: "CANCELADA" } : app
+          )
+        );
+        Alert.alert("Éxito", "Cita cancelada correctamente");
+      }
+    } catch (error: any) {
+      console.error("Error al cancelar cita:", error);
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Error al cancelar la cita"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     fetchUserData();
@@ -171,80 +242,154 @@ const Profile = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'info':
+      case "info":
         return (
           <View className="h-full w-full px-6 mt-6">
             {user ? (
               <View className="space-y-4">
                 <View className="flex-row justify-between items-center bg-black-200 p-4 rounded-lg">
                   <View className="flex-row items-center">
-                    <Image source={icons.mail} className="w-5 h-5 mr-2" resizeMode="contain" />
-                    <Text className="text-base font-medium text-gray-100">Correo:</Text>
+                    <Image
+                      source={icons.mail}
+                      className="w-5 h-5 mr-2"
+                      resizeMode="contain"
+                    />
+                    <Text className="text-base font-medium text-gray-100">
+                      Correo:
+                    </Text>
                   </View>
-                  <Text className="text-base font-normal text-gray-300">{user.correo}</Text>
+                  <Text className="text-base font-normal text-gray-300">
+                    {user.correo}
+                  </Text>
                 </View>
 
                 <View className="flex-row justify-between items-center bg-black-200 p-4 rounded-lg">
                   <View className="flex-row items-center">
                     <Image
-                      source={user?.sexo === "Masculino" ? icons.male : icons.female} 
-                      className="w-5 h-5 mr-2" 
+                      source={
+                        user.sexo === "Masculino" ? icons.male : icons.female
+                      }
+                      className="w-5 h-5 mr-2"
                       resizeMode="contain"
                     />
-                    <Text className="text-base font-medium text-gray-100">Sexo:</Text>
-                  </View>
-                  <Text className="text-base font-normal text-gray-300">{user.sexo}</Text>
-                </View>
-
-                <View className="flex-row justify-between items-center bg-black-200 p-4 rounded-lg">
-                  <View className="flex-row items-center">
-                    <Image source={icons.foot} className="w-5 h-5 mr-2" resizeMode="contain" />
-                    <Text className="text-base font-medium text-gray-100">Altura:</Text>
+                    <Text className="text-base font-medium text-gray-100">
+                      Sexo:
+                    </Text>
                   </View>
                   <Text className="text-base font-normal text-gray-300">
-                    {user.altura || 'No especificado'}
+                    {user.sexo}
                   </Text>
                 </View>
 
                 <View className="flex-row justify-between items-center bg-black-200 p-4 rounded-lg">
                   <View className="flex-row items-center">
-                    <Image source={icons.weight} className="w-5 h-5 mr-2" resizeMode="contain" />
-                    <Text className="text-base font-medium text-gray-100">Peso:</Text>
+                    <Image
+                      source={icons.date}
+                      className="w-5 h-5 mr-2"
+                      resizeMode="contain"
+                    />
+                    <Text className="text-base font-medium text-gray-100">
+                      Especialidad:
+                    </Text>
                   </View>
-                  <Text className="text-base font-normal text-gray-300">
-                    {user.peso || 'No especificado'}
-                  </Text>
+                  {isEditing ? (
+                    <TextInput
+                      className="text-base font-normal text-gray-300 bg-black-300 px-2 py-1 rounded w-20 text-right"
+                      value={editedData.especialidad}
+                      onChangeText={(text) =>
+                        setEditedData({ ...editedData, especialidad: text })
+                      }
+                      placeholder="Ej. General"
+                    />
+                  ) : (
+                    <Text className="text-base font-normal text-gray-300">
+                      {user.especialidad
+                        ? `${user.especialidad}`
+                        : "No especificado"}
+                    </Text>
+                  )}
                 </View>
 
-                <View className="flex-row justify-between items-center bg-black-200 p-4 rounded-lg">
-                  <View className="flex-row items-center">
-                    <Image source={icons.date} className="w-5 h-5 mr-2" resizeMode="contain" />
-                    <Text className="text-base font-medium text-gray-100">Edad:</Text>
+                {user.telefono && (
+                  <View className="flex-row justify-between items-center bg-black-200 p-4 rounded-lg">
+                    <View className="flex-row items-center">
+                      <Image
+                        source={icons.phone}
+                        className="w-5 h-5 mr-2"
+                        resizeMode="contain"
+                      />
+                      <Text className="text-base font-medium text-gray-100">
+                        Teléfono:
+                      </Text>
+                    </View>
+                    {isEditing ? (
+                      <TextInput
+                        className="text-base font-normal text-gray-300 bg-black-300 px-2 py-1 rounded w-20 text-right"
+                        value={editedData.telefono}
+                        onChangeText={(text) =>
+                          setEditedData({ ...editedData, telefono: text })
+                        }
+                        placeholder="Ej. 734xxxxxxx"
+                      />
+                    ) : (
+                      <Text className="text-base font-normal text-gray-300">
+                        {user.telefono
+                          ? `${user.telefono}`
+                          : "No especificado"}
+                      </Text>
+                    )}
                   </View>
-                  <Text className="text-base font-normal text-gray-300">
-                    {user.edad || 'No especificado'}
-                  </Text>
-                </View>
+                )}
               </View>
             ) : (
-              <Text className="text-lg text-gray-400 text-center mt-8">Cargando información...</Text>
+              <Text className="text-lg text-gray-400 text-center mt-8">
+                Cargando información...
+              </Text>
             )}
 
-          <CustomButton 
-          title="Actualizar datos"
-          handlePress={updateData}
-          containerStyles="mt-10 w-2/4 mx-auto"
-          isLoading={isSubmitting}
-          />
+            {/* Botón de acción */}
+            <View className="flex-row justify-center space-x-4 mt-6">
+              {isEditing ? (
+                <>
+                  <CustomButton
+                    title="Cancelar"
+                    handlePress={() => setIsEditing(false)}
+                    containerStyles="w-1/3 bg-gray-500"
+                    textStyles="text-white"
+                  />
+                  <CustomButton
+                    title="Guardar"
+                    handlePress={updateData}
+                    containerStyles="w-1/3"
+                    isLoading={isSubmitting}
+                  />
+                </>
+              ) : (
+                <CustomButton
+                  title="Editar datos"
+                  handlePress={() => {
+                    setIsEditing(true);
+                    setEditedData({
+                      especialidad: user?.especialidad || "",
+                      telefono: user?.telefono || "",
+                    });
+                  }}
+                  containerStyles="w-2/4 mx-auto"
+                />
+              )}
+            </View>
           </View>
         );
-      case 'citas':
+
+      case "citas":
         return (
           <View className="w-full mt-4">
             {appointments.length === 0 ? (
-              <Text className="text-gray-400 text-center mt-8">No tienes citas programadas</Text>
+              <Text className="text-gray-400 text-center mt-8">
+                No tienes citas programadas
+              </Text>
             ) : (
-              appointments.map(appointment => (
+              appointments.map((appointment) => (
                 <AppointmentCardDoc
                   key={appointment.id}
                   appointment={{
@@ -252,10 +397,10 @@ const Profile = () => {
                     fechaHora: appointment.fechaHora,
                     paciente: {
                       nombre: appointment.paciente.nombre,
-                      sexo: appointment.paciente.sexo
+                      sexo: appointment.paciente.sexo,
                     },
                     estado: appointment.estado,
-                    motivo: appointment.motivo
+                    motivo: appointment.motivo,
                   }}
                   onConfirm={() => handleConfirmAppointment(appointment.id)}
                   onCancel={() => handleCancelAppointment(appointment.id)}
@@ -273,34 +418,61 @@ const Profile = () => {
     <SafeAreaView className="bg-primary h-full">
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View className="items-center mt-6">
-          <Image source={icons.profile} className="w-[100px] h-[100px]" resizeMode="contain" />
-          <Text className="text-2xl text-white font-semibold mt-4">{user?.sexo === "Masculino" ? "Dr." : "Dra."} {user?.nombre || 'Usuario'}</Text>
+          <Image
+            source={icons.profile}
+            className="w-[100px] h-[100px]"
+            resizeMode="contain"
+          />
+          <Text className="text-2xl text-white font-semibold mt-4">
+            {user?.sexo === "Masculino" ? "Dr." : "Dra."}{" "}
+            {user?.nombre || "Usuario"}
+          </Text>
+          {user?.especialidad && (
+            <Text className="text-terciary text-lg mt-1">
+              {user.especialidad}
+            </Text>
+          )}
         </View>
 
         <View className="flex-row justify-center mt-6 border-b border-gray-700 mx-4">
-          <TouchableOpacity 
-            className={`px-6 pb-3 ${activeTab === 'info' ? 'border-b-2 border-terciary' : ''}`}
-            onPress={() => setActiveTab('info')}
+          <TouchableOpacity
+            className={`px-6 pb-3 ${
+              activeTab === "info" ? "border-b-2 border-terciary" : ""
+            }`}
+            onPress={() => setActiveTab("info")}
           >
-            <Text className={`text-lg ${activeTab === 'info' ? 'text-terciary font-semibold' : 'text-gray-400'}`}>
+            <Text
+              className={`text-lg ${
+                activeTab === "info"
+                  ? "text-terciary font-semibold"
+                  : "text-gray-400"
+              }`}
+            >
               Info.
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            className={`px-6 pb-3 ${activeTab === 'citas' ? 'border-b-2 border-terciary' : ''}`}
-            onPress={() => setActiveTab('citas')}
+          <TouchableOpacity
+            className={`px-6 pb-3 ${
+              activeTab === "citas" ? "border-b-2 border-terciary" : ""
+            }`}
+            onPress={() => setActiveTab("citas")}
           >
-            <Text className={`text-lg ${activeTab === 'citas' ? 'text-terciary font-semibold' : 'text-gray-400'}`}>
+            <Text
+              className={`text-lg ${
+                activeTab === "citas"
+                  ? "text-terciary font-semibold"
+                  : "text-gray-400"
+              }`}
+            >
               Citas
             </Text>
           </TouchableOpacity>
         </View>
 
         {renderContent()}
-
       </ScrollView>
-      <StatusBar backgroundColor={'#161622'} />
+      <StatusBar backgroundColor={"#161622"} />
     </SafeAreaView>
   );
 };
