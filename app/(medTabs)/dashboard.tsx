@@ -1,11 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, SafeAreaView, StatusBar, TextInput, Alert, Modal } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import { icons } from '@/constants';
-import { useRouter } from 'expo-router';
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import PatientCard from '@/components/PatientCard';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  SafeAreaView,
+  StatusBar,
+  TextInput,
+  Alert,
+  Modal,
+} from "react-native";
+import { Picker } from "@react-native-picker/picker";
+import { icons } from "@/constants";
+import { useRouter } from "expo-router";
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import PatientCard from "@/components/PatientCard";
 
 type Cita = {
   id: string;
@@ -37,22 +48,24 @@ type Paciente = {
   altura?: number;
   peso?: number;
   imageUrl?: string;
-}
+};
 
 const DoctorDashboard = () => {
   const router = useRouter();
-  const [activeSection, setActiveSection] = useState<'citas' | 'pacientes' | 'horarios'>('citas');
+  const [activeSection, setActiveSection] = useState<
+    "citas" | "pacientes" | "horarios"
+  >("citas");
   const [citas, setCitas] = useState<Cita[]>([]);
   const [horarios, setHorarios] = useState<Horario[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [nuevoHorario, setNuevoHorario] = useState({
-    diaSemana: 'LUNES',
-    horaInicio: '08:00',
-    horaFin: '17:00'
+    diaSemana: "LUNES",
+    horaInicio: "08:00",
+    horaFin: "17:00",
   });
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchQueryCitas, setSearchQueryCitas] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQueryCitas, setSearchQueryCitas] = useState("");
   const [searchMode, setSearchMode] = useState(false);
 
   // Función para eliminar pacientes duplicados
@@ -60,7 +73,7 @@ const DoctorDashboard = () => {
     const pacientesUnicos: Paciente[] = [];
     const idsUnicos = new Set<number>();
 
-    pacientes.forEach(paciente => {
+    pacientes.forEach((paciente) => {
       if (!idsUnicos.has(paciente.idUsuario)) {
         idsUnicos.add(paciente.idUsuario);
         pacientesUnicos.push(paciente);
@@ -73,58 +86,70 @@ const DoctorDashboard = () => {
   // Obtener citas del médico
   const fetchCitas = async () => {
     try {
-      const token = await AsyncStorage.getItem('authToken');
-      const response = await axios.get('http://localhost:8080/api/medicos/citas', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
+      const token = await AsyncStorage.getItem("authToken");
+      const response = await axios.get(
+        "http://localhost:8080/api/medicos/citas",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
       if (response.data.error) {
-        Alert.alert('Error', response.data.message);
+        Alert.alert("Error", response.data.message);
       } else {
         setCitas(response.data.data);
       }
     } catch (error) {
-      console.error('Error al obtener citas:', error);
-      Alert.alert('Error', 'No se pudieron cargar las citas');
+      console.error("Error al obtener citas:", error);
+      Alert.alert("Error", "No se pudieron cargar las citas");
     }
   };
 
   // Obtener horarios del médico
   const fetchHorarios = async () => {
     try {
-      const token = await AsyncStorage.getItem('authToken');
-      const response = await axios.get('http://localhost:8080/api/medicos/get/horarios', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
+      const token = await AsyncStorage.getItem("authToken");
+      const response = await axios.get(
+        "http://localhost:8080/api/medicos/get/horarios",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
       if (response.data.error) {
-        Alert.alert('Error', response.data.message);
+        Alert.alert("Error", response.data.message);
       } else {
         setHorarios(response.data.data);
       }
     } catch (error) {
-      console.error('Error al obtener horarios:', error);
-      Alert.alert('Error', 'No se pudieron cargar los horarios');
+      console.error("Error al obtener horarios:", error);
+      Alert.alert("Error", "No se pudieron cargar los horarios");
     }
   };
 
   const fetchAllPacientes = async () => {
     try {
-      const token = await AsyncStorage.getItem('authToken');
-      const response = await axios.get('http://localhost:8080/api/medicos/pacientes', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const token = await AsyncStorage.getItem("authToken");
+      const response = await axios.get(
+        "http://localhost:8080/api/medicos/pacientes",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (response.data.error) {
-        Alert.alert('Error', response.data.message);
+        Alert.alert("Error", response.data.message);
       } else {
         const allPacientes = response.data.data || response.data;
         const pacientesUnicos = eliminarDuplicados(allPacientes);
-        
+
         if (searchQuery.length > 0) {
-          const filtered = pacientesUnicos.filter((paciente: Paciente) =>
-            paciente.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            paciente.telefono.includes(searchQuery)
+          const filtered = pacientesUnicos.filter(
+            (paciente: Paciente) =>
+              paciente.nombre
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase()) ||
+              paciente.telefono.includes(searchQuery)
           );
           setPacientes(filtered);
         } else {
@@ -132,38 +157,58 @@ const DoctorDashboard = () => {
         }
       }
     } catch (error) {
-      console.error('Error al obtener todos los pacientes:', error);
-      Alert.alert('Error', 'No se pudieron cargar los pacientes');
+      console.error("Error al obtener todos los pacientes:", error);
+      Alert.alert("Error", "No se pudieron cargar los pacientes");
       setPacientes([]);
     }
   };
 
   const fetchPacientesByMedico = async () => {
     try {
-      const token = await AsyncStorage.getItem('authToken');
-      const response = await axios.get('http://localhost:8080/api/medicos/citas/pacientes', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const token = await AsyncStorage.getItem("authToken");
+      const response = await axios.get(
+        "http://localhost:8080/api/medicos/citas/pacientes",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (response.data.error) {
-        Alert.alert('Error', response.data.message);
+        Alert.alert("Error", response.data.message);
       } else {
         const pacientesUnicos = eliminarDuplicados(response.data.data);
         setPacientes(pacientesUnicos);
       }
     } catch (error) {
-      console.error('Error al obtener pacientes del médico:', error);
-      Alert.alert('Error', 'No se pudieron cargar los pacientes');
+      console.error("Error al obtener pacientes del médico:", error);
+      Alert.alert("Error", "No se pudieron cargar los pacientes");
       setPacientes([]);
     }
   };
 
   // Filtrar citas basado en la búsqueda
-  const filteredCitas = citas.filter(cita =>
-    cita.paciente.nombre.toLowerCase().includes(searchQueryCitas.toLowerCase()) ||
-    cita.motivo?.toLowerCase().includes(searchQueryCitas.toLowerCase()) ||
-    cita.estado.toLowerCase().includes(searchQueryCitas.toLowerCase())
+  const filteredCitas = citas.filter(
+    (cita) =>
+      cita.paciente.nombre
+        .toLowerCase()
+        .includes(searchQueryCitas.toLowerCase()) ||
+      cita.motivo?.toLowerCase().includes(searchQueryCitas.toLowerCase()) ||
+      cita.estado.toLowerCase().includes(searchQueryCitas.toLowerCase())
   );
+
+  // Función para verificar si la cita puede ser terminada
+  const canCompleteAppointment = (cita: Cita) => {
+    // Si el estado es COMPLETADA o CANCELADA, no se puede terminar
+    if (cita.estado === "COMPLETADA" || cita.estado === "CANCELADA") {
+      return false;
+    }
+
+    // Verificar si la hora actual es menor a la hora de la cita
+    const ahora = new Date();
+    const fechaCita = new Date(cita.fechaHora);
+
+    return ahora >= fechaCita;
+  };
 
   // Confirmar cita y redirigir a receta médica
   const confirmarCita = (citaId: string) => {
@@ -173,75 +218,79 @@ const DoctorDashboard = () => {
   // Agregar nuevo horario
   const agregarHorario = async () => {
     if (!nuevoHorario.horaInicio || !nuevoHorario.horaFin) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
+      Alert.alert("Error", "Por favor completa todos los campos");
       return;
     }
 
     try {
-      const token = await AsyncStorage.getItem('authToken');
+      const token = await AsyncStorage.getItem("authToken");
       const response = await axios.post(
-        'http://localhost:8080/api/medicos/post/horarios',
+        "http://localhost:8080/api/medicos/post/horarios",
         nuevoHorario,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (response.data.error) {
-        Alert.alert('Error', response.data.message);
+        Alert.alert("Error", response.data.message);
       } else {
-        Alert.alert('Éxito', 'Horario agregado correctamente');
+        Alert.alert("Éxito", "Horario agregado correctamente");
         setShowModal(false);
-        setNuevoHorario({ diaSemana: 'LUNES', horaInicio: '08:00', horaFin: '17:00' });
+        setNuevoHorario({
+          diaSemana: "LUNES",
+          horaInicio: "08:00",
+          horaFin: "17:00",
+        });
         fetchHorarios();
       }
     } catch (error) {
-      console.error('Error al agregar horario:', error);
-      Alert.alert('Error', 'No se pudo agregar el horario');
+      console.error("Error al agregar horario:", error);
+      Alert.alert("Error", "No se pudo agregar el horario");
     }
   };
 
   // Eliminar horario
   const eliminarHorario = async (diaSemana: string) => {
     Alert.alert(
-      'Confirmar',
+      "Confirmar",
       `¿Estás seguro de eliminar el horario del ${formatearDia(diaSemana)}?`,
       [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Eliminar', 
-          style: 'destructive',
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
           onPress: async () => {
             try {
-              const token = await AsyncStorage.getItem('authToken');
+              const token = await AsyncStorage.getItem("authToken");
               const response = await axios.delete(
-                'http://localhost:8080/api/medicos/delete/horarios',
+                "http://localhost:8080/api/medicos/delete/horarios",
                 {
                   headers: { Authorization: `Bearer ${token}` },
-                  data: { diaSemana }
+                  data: { diaSemana },
                 }
               );
 
               if (response.data.error) {
-                Alert.alert('Error', response.data.message);
+                Alert.alert("Error", response.data.message);
               } else {
-                Alert.alert('Éxito', response.data.message);
+                Alert.alert("Éxito", response.data.message);
                 fetchHorarios();
               }
             } catch (error) {
-              console.error('Error al eliminar horario:', error);
-              Alert.alert('Error', 'No se pudo eliminar el horario');
+              console.error("Error al eliminar horario:", error);
+              Alert.alert("Error", "No se pudo eliminar el horario");
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
 
   useEffect(() => {
-    if (activeSection === 'citas') {
+    if (activeSection === "citas") {
       fetchCitas();
-    } else if (activeSection === 'horarios') {
+    } else if (activeSection === "horarios") {
       fetchHorarios();
-    } else if (activeSection === 'pacientes') {
+    } else if (activeSection === "pacientes") {
       if (searchQuery.length > 0) {
         setSearchMode(true);
         fetchAllPacientes();
@@ -254,33 +303,33 @@ const DoctorDashboard = () => {
 
   const formatearDia = (dia: string) => {
     const dias: Record<string, string> = {
-      'LUNES': 'Lunes',
-      'MARTES': 'Martes',
-      'MIÉRCOLES': 'Miércoles',
-      'JUEVES': 'Jueves',
-      'VIERNES': 'Viernes',
-      'SÁBADO': 'Sábado',
-      'DOMINGO': 'Domingo'
+      LUNES: "Lunes",
+      MARTES: "Martes",
+      MIÉRCOLES: "Miércoles",
+      JUEVES: "Jueves",
+      VIERNES: "Viernes",
+      SÁBADO: "Sábado",
+      DOMINGO: "Domingo",
     };
     return dias[dia] || dia;
   };
 
   const formatearFecha = (fechaHora: string) => {
     const fecha = new Date(fechaHora);
-    return fecha.toLocaleString('es-MX', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return fecha.toLocaleString("es-MX", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   return (
     <SafeAreaView className="bg-primary flex-1">
       <StatusBar backgroundColor="#161622" />
-      
+
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 pt-2 pb-2 bg-secondary">
         <Text className="text-xl text-white font-bold">Panel Médico</Text>
@@ -289,19 +338,27 @@ const DoctorDashboard = () => {
 
       {/* Menú de navegación */}
       <View className="border-b border-gray-700">
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 16 }}
           className="py-2"
         >
-          {['citas', 'horarios', 'pacientes'].map((section) => (
+          {["citas", "horarios", "pacientes"].map((section) => (
             <TouchableOpacity
               key={section}
-              className={`px-4 py-2 mx-1 ${activeSection === section ? 'border-b-2 border-terciary' : ''}`}
+              className={`px-4 py-2 mx-1 ${
+                activeSection === section ? "border-b-2 border-terciary" : ""
+              }`}
               onPress={() => setActiveSection(section as any)}
             >
-              <Text className={`text-base ${activeSection === section ? 'text-terciary font-semibold' : 'text-gray-400'}`}>
+              <Text
+                className={`text-base ${
+                  activeSection === section
+                    ? "text-terciary font-semibold"
+                    : "text-gray-400"
+                }`}
+              >
                 {section.charAt(0).toUpperCase() + section.slice(1)}
               </Text>
             </TouchableOpacity>
@@ -311,17 +368,19 @@ const DoctorDashboard = () => {
 
       {/* Contenido principal */}
       <ScrollView className="flex-1 px-4 pt-2">
-        {activeSection === 'citas' && (
-          <View className='mt-4'>
-            <View className='flex-row items-center justify-between mb-4'>
-              <Text className="text-white text-xl font-bold">Próximas citas</Text>
+        {activeSection === "citas" && (
+          <View className="mt-4">
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-white text-xl font-bold">
+                Próximas citas
+              </Text>
               {/* Search Bar para citas */}
               <View className="bg-white rounded-full flex-1 ml-4 border border-gray-300">
                 <View className="flex-row items-center px-4 py-2">
-                  <Image 
-                    source={icons.search} 
-                    className="w-4 h-4 mr-2" 
-                    style={{ tintColor: '#6B7280' }}
+                  <Image
+                    source={icons.search}
+                    className="w-4 h-4 mr-2"
+                    style={{ tintColor: "#6B7280" }}
                   />
                   <TextInput
                     placeholder="Buscar cita..."
@@ -331,25 +390,30 @@ const DoctorDashboard = () => {
                     onChangeText={setSearchQueryCitas}
                   />
                   {searchQueryCitas && (
-                    <TouchableOpacity onPress={() => setSearchQueryCitas('')}>
-                      <Image 
-                        source={icons.close} 
-                        className="w-4 h-4" 
-                        style={{ tintColor: '#6B7280' }}
+                    <TouchableOpacity onPress={() => setSearchQueryCitas("")}>
+                      <Image
+                        source={icons.close}
+                        className="w-4 h-4"
+                        style={{ tintColor: "#6B7280" }}
                       />
                     </TouchableOpacity>
                   )}
                 </View>
               </View>
             </View>
-            
+
             {filteredCitas.length === 0 ? (
               <Text className="text-gray-400 text-center my-4">
-                {searchQueryCitas ? 'No se encontraron citas' : 'No hay citas programadas'}
+                {searchQueryCitas
+                  ? "No se encontraron citas"
+                  : "No hay citas programadas"}
               </Text>
             ) : (
               filteredCitas.map((cita) => (
-                <View key={cita.id} className="bg-black-200 p-4 rounded-lg mb-3">
+                <View
+                  key={cita.id}
+                  className="bg-black-200 p-4 rounded-lg mb-3"
+                >
                   <View className="flex-row justify-between items-center">
                     <View className="flex-1">
                       <Text className="text-white font-semibold">
@@ -359,19 +423,34 @@ const DoctorDashboard = () => {
                         {formatearFecha(cita.fechaHora)}
                       </Text>
                       <Text className="text-gray-400">
-                        Motivo: {cita.motivo || 'No especificado'}
+                        Motivo: {cita.motivo || "No especificado"}
                       </Text>
-                      <Text className={`text-sm ${
-                      cita.estado === 'CONFIRMADA' ? 'text-yellow-500' :
-                      cita.estado === 'COMPLETADA' ? 'text-terciary' :
-                      cita.estado === 'CANCELADA' ? 'text-error' : 'text-yellow-500'
-                    }`}>
-                      Estado: {cita.estado}
-                    </Text>
+                      <Text
+                        className={`text-sm ${
+                          cita.estado === "CONFIRMADA"
+                            ? "text-terciary"
+                            : cita.estado === "COMPLETADA"
+                            ? "text-secondary"
+                            : cita.estado === "CANCELADA"
+                            ? "text-error"
+                            : "text-yellow-500"
+                        }`}
+                      >
+                        Estado: {cita.estado}
+                      </Text>
                     </View>
-                    <TouchableOpacity 
-                      className="bg-terciary px-4 py-2 rounded-lg"
-                      onPress={() => confirmarCita(cita.id)}
+                    <TouchableOpacity
+                      className={`px-4 py-2 rounded-lg ${
+                        canCompleteAppointment(cita)
+                          ? "bg-terciary"
+                          : "bg-gray-500 opacity-50"
+                      }`}
+                      onPress={() =>
+                        canCompleteAppointment(cita)
+                          ? confirmarCita(cita.id)
+                          : null
+                      }
+                      disabled={!canCompleteAppointment(cita)}
                     >
                       <Text className="text-black font-semibold">Terminar</Text>
                     </TouchableOpacity>
@@ -381,21 +460,24 @@ const DoctorDashboard = () => {
             )}
           </View>
         )}
-        
-        {activeSection === 'horarios' && (
+
+        {activeSection === "horarios" && (
           <View className="mt-5">
             <View className="flex-row justify-between items-center mb-4">
               <Text className="text-white text-xl font-bold">Mis Horarios</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 className="bg-terciary px-4 py-2 rounded-lg"
                 onPress={() => {
                   if (horarios.length > 0) {
                     Alert.alert(
-                      'Advertencia',
-                      'Si agregas un nuevo horario para un día existente, el horario anterior será reemplazado automáticamente.',
+                      "Advertencia",
+                      "Si agregas un nuevo horario para un día existente, el horario anterior será reemplazado automáticamente.",
                       [
-                        { text: 'Cancelar', style: 'cancel' },
-                        { text: 'Continuar', onPress: () => setShowModal(true) },
+                        { text: "Cancelar", style: "cancel" },
+                        {
+                          text: "Continuar",
+                          onPress: () => setShowModal(true),
+                        },
                       ]
                     );
                   } else {
@@ -408,10 +490,15 @@ const DoctorDashboard = () => {
             </View>
 
             {horarios.length === 0 ? (
-              <Text className="text-gray-400 text-center my-4">No hay horarios registrados</Text>
+              <Text className="text-gray-400 text-center my-4">
+                No hay horarios registrados
+              </Text>
             ) : (
               horarios.map((horario) => (
-                <View key={horario.idHorario} className="bg-black-200 p-4 rounded-lg mb-3">
+                <View
+                  key={horario.idHorario}
+                  className="bg-black-200 p-4 rounded-lg mb-3"
+                >
                   <View className="flex-row justify-between items-center">
                     <View>
                       <Text className="text-white font-semibold">
@@ -420,11 +507,15 @@ const DoctorDashboard = () => {
                       <Text className="text-gray-400">
                         {horario.horaInicio} - {horario.horaFin}
                       </Text>
-                      <Text className={`mt-1 ${horario.disponible ? 'text-terciary' : 'text-error'}`}>
-                        {horario.disponible ? 'Disponible' : 'No disponible'}
+                      <Text
+                        className={`mt-1 ${
+                          horario.disponible ? "text-terciary" : "text-error"
+                        }`}
+                      >
+                        {horario.disponible ? "Disponible" : "No disponible"}
                       </Text>
                     </View>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       onPress={() => eliminarHorario(horario.diaSemana)}
                       className="bg-error p-2 rounded-full"
                     >
@@ -437,20 +528,20 @@ const DoctorDashboard = () => {
           </View>
         )}
 
-        {activeSection === 'pacientes' && (
+        {activeSection === "pacientes" && (
           <View className="mt-4">
             <View className="flex-row items-center justify-between mb-4">
               <Text className="text-white text-xl font-bold">
-                {searchMode ? 'Todos' : 'Mis Pacientes'}
+                {searchMode ? "Todos" : "Mis Pacientes"}
               </Text>
-              
+
               {/* Search Bar */}
               <View className="bg-white rounded-full flex-1 ml-4 border border-gray-300">
                 <View className="flex-row items-center px-4 py-2">
-                  <Image 
-                    source={icons.search} 
-                    className="w-4 h-4 mr-2" 
-                    style={{ tintColor: '#6B7280' }}
+                  <Image
+                    source={icons.search}
+                    className="w-4 h-4 mr-2"
+                    style={{ tintColor: "#6B7280" }}
                   />
                   <TextInput
                     placeholder="Buscar paciente..."
@@ -467,15 +558,17 @@ const DoctorDashboard = () => {
                     }}
                   />
                   {searchQuery && (
-                    <TouchableOpacity onPress={() => {
-                      setSearchQuery('');
-                      setSearchMode(false);
-                      fetchPacientesByMedico();
-                    }}>
-                      <Image 
-                        source={icons.close} 
-                        className="w-4 h-4" 
-                        style={{ tintColor: '#6B7280' }}
+                    <TouchableOpacity
+                      onPress={() => {
+                        setSearchQuery("");
+                        setSearchMode(false);
+                        fetchPacientesByMedico();
+                      }}
+                    >
+                      <Image
+                        source={icons.close}
+                        className="w-4 h-4"
+                        style={{ tintColor: "#6B7280" }}
                       />
                     </TouchableOpacity>
                   )}
@@ -487,12 +580,14 @@ const DoctorDashboard = () => {
             {pacientes.length === 0 ? (
               <View className="bg-white rounded-lg p-6 border border-gray-200">
                 <Text className="text-gray-500 text-center">
-                  {searchQuery ? 'No se encontraron pacientes' : 'No hay pacientes registrados'}
+                  {searchQuery
+                    ? "No se encontraron pacientes"
+                    : "No hay pacientes registrados"}
                 </Text>
               </View>
             ) : (
               pacientes.map((paciente) => (
-                <PatientCard 
+                <PatientCard
                   key={`patient-${paciente.idUsuario}`}
                   patient={{
                     idUsuario: paciente.idUsuario,
@@ -501,7 +596,7 @@ const DoctorDashboard = () => {
                     sexo: paciente.sexo,
                     telefono: paciente.telefono,
                     altura: paciente.altura,
-                    peso: paciente.peso
+                    peso: paciente.peso,
                   }}
                 />
               ))
@@ -518,22 +613,44 @@ const DoctorDashboard = () => {
         onRequestClose={() => setShowModal(false)}
       >
         <View className="flex-1 justify-center items-center bg-black/80">
-          <View className="bg-primary p-6 rounded-lg w-11/12 border border-gray-600"> 
-            <Text className="text-white text-lg font-bold mb-4">Agregar Nuevo Horario</Text>
-            
-            <Text className="text-gray-200 mb-2">Día de la semana:</Text> 
-            <View className="bg-gray-700 rounded-lg mb-4 overflow-hidden"> 
+          <View className="bg-primary p-6 rounded-lg w-11/12 border border-gray-600">
+            <Text className="text-white text-lg font-bold mb-4">
+              Agregar Nuevo Horario
+            </Text>
+
+            <Text className="text-gray-200 mb-2">Día de la semana:</Text>
+            <View className="bg-gray-700 rounded-lg mb-4 overflow-hidden">
               <Picker
                 selectedValue={nuevoHorario.diaSemana}
-                onValueChange={(itemValue) => setNuevoHorario({...nuevoHorario, diaSemana: itemValue})}
-                style={{ color: 'white' }}
+                onValueChange={(itemValue) =>
+                  setNuevoHorario({ ...nuevoHorario, diaSemana: itemValue })
+                }
+                style={{ color: "white" }}
                 dropdownIconColor="white"
                 mode="dropdown"
               >
-                {['LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO', 'DOMINGO'].map((dia, index) => (
-                  <Picker.Item 
+                {[
+                  "LUNES",
+                  "MARTES",
+                  "MIÉRCOLES",
+                  "JUEVES",
+                  "VIERNES",
+                  "SÁBADO",
+                  "DOMINGO",
+                ].map((dia, index) => (
+                  <Picker.Item
                     key={dia}
-                    label={['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][index]}
+                    label={
+                      [
+                        "Lunes",
+                        "Martes",
+                        "Miércoles",
+                        "Jueves",
+                        "Viernes",
+                        "Sábado",
+                        "Domingo",
+                      ][index]
+                    }
                     value={dia}
                     color="white"
                   />
@@ -545,9 +662,11 @@ const DoctorDashboard = () => {
             <TextInput
               className="bg-gray-700 text-white p-3 rounded-lg mb-4 border border-gray-600"
               placeholder="HH:MM"
-              placeholderTextColor="#9CA3AF" 
+              placeholderTextColor="#9CA3AF"
               value={nuevoHorario.horaInicio}
-              onChangeText={(text) => setNuevoHorario({...nuevoHorario, horaInicio: text})}
+              onChangeText={(text) =>
+                setNuevoHorario({ ...nuevoHorario, horaInicio: text })
+              }
             />
 
             <Text className="text-gray-200 mb-2">Hora de fin:</Text>
@@ -556,17 +675,19 @@ const DoctorDashboard = () => {
               placeholder="HH:MM"
               placeholderTextColor="#9CA3AF"
               value={nuevoHorario.horaFin}
-              onChangeText={(text) => setNuevoHorario({...nuevoHorario, horaFin: text})}
+              onChangeText={(text) =>
+                setNuevoHorario({ ...nuevoHorario, horaFin: text })
+              }
             />
 
             <View className="flex-row justify-between">
-              <TouchableOpacity 
-                className="bg-error px-6 py-2 rounded-lg" 
+              <TouchableOpacity
+                className="bg-error px-6 py-2 rounded-lg"
                 onPress={() => setShowModal(false)}
               >
                 <Text className="text-black font-semibold">Cancelar</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 className="bg-terciary px-6 py-2 rounded-lg"
                 onPress={agregarHorario}
               >

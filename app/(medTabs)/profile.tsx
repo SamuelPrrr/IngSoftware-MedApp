@@ -168,40 +168,32 @@ const Profile = () => {
   };
 
   const handleConfirmAppointment = async (appointmentId: string) => {
-    setIsSubmitting(true);
-    try {
-      const token = await AsyncStorage.getItem("authToken");
-      const response = await axios.put(
-        `http://localhost:8080/api/medicos/citas/${appointmentId}/estado`,
-        null,
-        {
-          params: { nuevoEstado: "CONFIRMADA" },
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (response.data.error) {
-        Alert.alert("Error", response.data.message);
-      } else {
-        setAppointments((prev) =>
-          prev.map((app) =>
-            app.id === appointmentId ? { ...app, estado: "CONFIRMADA" } : app
-          )
-        );
-        Alert.alert("Éxito", "Cita confirmada correctamente");
-      }
-    } catch (error: any) {
-      console.error("Error al confirmar cita:", error);
-      Alert.alert(
-        "Error",
-        error.response?.data?.message || "Error al confirmar la cita"
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+    router.push(`/receta-medica?citaId=${appointmentId}`);
   };
 
   const handleCancelAppointment = async (appointmentId: string) => {
+    // Mostrar diálogo de confirmación
+    Alert.alert(
+      "Confirmar cancelación",
+      "¿Estás seguro que deseas cancelar esta cita?",
+      [
+        {
+          text: "No",
+          style: "cancel",
+        },
+        {
+          text: "Sí",
+          onPress: async () => {
+            await executeCancelAppointment(appointmentId);
+          },
+          style: "destructive",
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+  
+  const executeCancelAppointment = async (appointmentId: string) => {
     setIsSubmitting(true);
     try {
       const token = await AsyncStorage.getItem("authToken");
@@ -213,7 +205,7 @@ const Profile = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
+  
       if (response.data.error) {
         Alert.alert("Error", response.data.message);
       } else {
@@ -360,7 +352,8 @@ const Profile = () => {
                   <CustomButton
                     title="Guardar"
                     handlePress={updateData}
-                    containerStyles="w-1/3"
+                    containerStyles="w-1/3 ml-5"
+                    textStyles="text-white"
                     isLoading={isSubmitting}
                   />
                 </>
@@ -375,6 +368,7 @@ const Profile = () => {
                     });
                   }}
                   containerStyles="w-2/4 mx-auto"
+                  textStyles="text-white"
                 />
               )}
             </View>

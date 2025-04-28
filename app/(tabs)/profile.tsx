@@ -305,40 +305,65 @@ const Profile = () => {
       setIsSubmitting(false);
     }
   };
-  
+
   const handleCancelAppointment = async (appointmentId: string) => {
+    // Mostrar diálogo de confirmación
+    Alert.alert(
+      "Confirmar cancelación",
+      "¿Estás seguro que deseas cancelar esta cita?",
+      [
+        {
+          text: "No",
+          style: "cancel",
+        },
+        {
+          text: "Sí",
+          onPress: async () => {
+            await executeCancelAppointment(appointmentId);
+          },
+          style: "destructive",
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+  
+  const executeCancelAppointment = async (appointmentId: string) => {
     setIsSubmitting(true);
     try {
-      const token = await AsyncStorage.getItem('authToken');
+      const token = await AsyncStorage.getItem("authToken");
       const response = await axios.put(
         `http://localhost:8080/api/pacientes/citas/${appointmentId}/estado`,
         null,
         {
-          params: { nuevoEstado: 'CANCELADA' }, // Mayúsculas para coincidir con el enum
-          headers: { Authorization: `Bearer ${token}` }
+          params: { nuevoEstado: "CANCELADA" },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
   
       if (response.data.error) {
-        Alert.alert('Error', response.data.message);
+        Alert.alert("Error", response.data.message);
       } else {
-        setAppointments(prevAppointments => 
-          prevAppointments.map(appointment => 
-            appointment.id === appointmentId 
-              ? { ...appointment, estado: 'CANCELADA' } 
-              : appointment
+        setAppointments((prev) =>
+          prev.map((app) =>
+            app.id === appointmentId ? { ...app, estado: "CANCELADA" } : app
           )
         );
-        Alert.alert('Éxito', 'Cita cancelada correctamente');
+        Alert.alert("Éxito", "Cita cancelada correctamente");
       }
-    } catch (error: any) { // Especificamos el tipo 'any' para evitar el error
-      console.error('Error al cancelar cita:', error);
-      const errorMessage = error.response?.data?.message || 'Error al cancelar la cita';
-      Alert.alert('Error', errorMessage);
+    } catch (error: any) {
+      console.error("Error al cancelar cita:", error);
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Error al cancelar la cita"
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  
+
   
 
   const updateData = async () => {
@@ -498,7 +523,7 @@ const Profile = () => {
                   </View>
                   {isEditing ? (
                     <TextInput
-                      className="text-base font-normal text-gray-300 bg-black-300 px-2 py-1 rounded flex-1 ml-2"
+                      className="text-base font-normal text-gray-100 bg-black-300 px-2 py-1 rounded flex-1 ml-2 text-right"
                       value={editedData.direccion}
                       onChangeText={(text) => setEditedData({...editedData, direccion: text})}
                       placeholder="Ej. Calle Principal 123"
@@ -524,8 +549,9 @@ const Profile = () => {
                       <CustomButton 
                         title="Guardar"
                         handlePress={updateData}
-                        containerStyles="w-1/3"
+                        containerStyles="w-1/3 ml-5"
                         isLoading={isSubmitting}
+                        textStyles='text-white'
                       />
                     </>
                   ) : (
@@ -541,6 +567,7 @@ const Profile = () => {
                         });
                       }}
                       containerStyles="w-2/4 mx-auto"
+                      textStyles='text-white'
                     />
                   )}
                 </View>
@@ -576,11 +603,6 @@ const Profile = () => {
                     <View className="flex-row justify-between mb-1">
                       <Text className="text-gray-400">Frecuencia:</Text>
                       <Text className="text-white">Cada {med.frecuencia.split(':')[0]} horas</Text>
-                    </View>
-                    
-                    <View className="flex-row justify-between mb-1">
-                      <Text className="text-gray-400">Próxima dosis:</Text>
-                      <Text className="text-white">{med.tiempoRestante}</Text>
                     </View>
                     
                     <View className="flex-row justify-between mb-3">
