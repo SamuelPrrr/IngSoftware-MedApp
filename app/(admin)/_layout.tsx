@@ -1,0 +1,101 @@
+import { Tabs } from 'expo-router';
+import React from 'react';
+import { ImageSourcePropType, Platform } from 'react-native';
+import { Text, View, Image } from 'react-native';
+import { icons } from '../../constants'; // Exportar los iconos por medio de sus definiciones en constants
+import tailwindConfig from '../../tailwind.config'; // Exportar los estilos configurados en tailwind
+
+
+// TypeScript es un lenguaje estáticamente tipado por lo cual tengo que definir los props
+type TabIconProps = {
+  icon: ImageSourcePropType; // Tipo para la propiedad `icon`
+  color: string; // Tipo para la propiedad `color`
+  name: string; // Tipo para la propiedad `name`
+  focused: boolean; // Tipo para la propiedad `focused`
+};
+
+const TabIcon = ({ icon, color, name, focused }: TabIconProps) => {
+  return (
+    <View className='items-center justify-center gap-2' style={{ width: 80}}>
+      <Image
+        source={icon}
+        resizeMode='contain'
+        tintColor={color}
+        className='w-6 h-6'
+      />  
+      <Text
+        className={`${focused ? 'font-extrabold' : 'font-normal'} text-xs`}
+        style={{ color: color}}
+      >
+        {name}
+      </Text>
+    </View>
+  );
+};
+
+export default function TabLayout() {
+  return (
+    <Tabs
+      screenOptions={{
+        tabBarShowLabel: false,
+        tabBarActiveTintColor: '#1372DF',
+        tabBarInactiveTintColor: '#CDCDE0',
+        tabBarStyle: {
+          backgroundColor: '#161622',
+          paddingTop: 15,
+          borderTopWidth: 1,
+          height: 80,
+          borderColor: '#1372DF'
+        },
+         // 🎨 Cambiar color del header
+        headerStyle: {
+          backgroundColor: '#1372DF', // Color de fondo del header
+        },
+        headerTintColor: '#FFFFFF', // Color del texto y los íconos en el header
+      }}>
+      <Tabs.Screen
+        name="dashboard"
+        options={{
+          title: 'Control',
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              icon={icons.plus}
+              color={color}
+              name="Control"
+              focused={focused}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: '¡Bienvenido!',
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              icon={icons.profile}
+              color={color}
+              name="Perfil"
+              focused={focused}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Ajustes',
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              icon={icons.bookmark}
+              color={color}
+              name="Ajustes"
+              focused={focused}
+            />
+          ),
+        }}
+      />
+    </Tabs>
+  );
+}
+
