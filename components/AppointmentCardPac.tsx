@@ -84,7 +84,7 @@ const AppointmentCardPac: React.FC<AppointmentCardProps> = ({ appointment, onCon
       </View>
       <View className={`mt-2 h-1 rounded-full ${
         appointment.estado === 'CONFIRMADA' ? 'bg-terciary' :
-        appointment.estado === 'COMPLETADA' ? 'bg-gray-500' :
+        appointment.estado === 'COMPLETADA' ? 'bg-secondary' :
         appointment.estado === 'CANCELADA' ? 'bg-error' : 'bg-yellow-500'
       }`} />
     </Animated.View>

@@ -59,6 +59,7 @@ type Usuario = {
   credentialsNonExpired?: boolean;
   // Añade especialidad solo si aplica para médicos
   especialidad?: string;
+  activo: boolean;
 };
 
 const AdminDashboard = () => {
@@ -184,14 +185,14 @@ const AdminDashboard = () => {
     );
   };
 
-  // Eliminar usuario (paciente o médico)
+  //desactivar
   const eliminarUsuario = async (
     usuarioId: number,
     tipo: "paciente" | "medico"
   ) => {
     Alert.alert(
-      "Confirmar eliminación",
-      `¿Estás seguro que deseas eliminar este ${tipo}?`,
+      "Confirmar desactivación",
+      `¿Estás seguro que deseas desactivar a este ${tipo}?`,
       [
         { text: "No", style: "cancel" },
         {
@@ -200,24 +201,27 @@ const AdminDashboard = () => {
             try {
               setIsLoading(true);
               const token = await AsyncStorage.getItem("authToken");
-              const endpoint =
-                tipo === "paciente"
-                  ? `http://localhost:8080/api/admin/eliminar/${usuarioId}`
-                  : `http://localhost:8080/api/admin/${usuarioId}/medico`;
-
-              const response = await axios.delete(endpoint, {
-                headers: { Authorization: `Bearer ${token}` },
-              });
-
+              
+              // Corrección importante: Configuración correcta de axios.patch
+              const response = await axios.patch(
+                `http://localhost:8080/api/admin/${usuarioId}/desactivar`,
+                null, // Body vacío ya que solo cambias el estado
+                {
+                  headers: { 
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  }
+                }
+              );
+  
               if (response.data.error) {
                 Alert.alert("Error", response.data.message);
               } else {
                 Alert.alert(
                   "Éxito",
-                  `${
-                    tipo.charAt(0).toUpperCase() + tipo.slice(1)
-                  } eliminado correctamente`
+                  `${tipo.charAt(0).toUpperCase() + tipo.slice(1)} desactivado correctamente`
                 );
+                // Actualiza la lista correspondiente
                 if (tipo === "paciente") {
                   fetchPacientes();
                 } else {
@@ -225,8 +229,15 @@ const AdminDashboard = () => {
                 }
               }
             } catch (error) {
-              console.error(`Error al eliminar ${tipo}:`, error);
-              Alert.alert("Error", `No se pudo eliminar el ${tipo}`);
+              console.error(`Error al desactivar ${tipo}:`, error);
+              
+              // Manejo de errores más detallado
+              let errorMessage = `No se pudo desactivar el ${tipo}`;
+              if (axios.isAxiosError(error)) {
+                errorMessage = error.response?.data?.message || errorMessage;
+              }
+              
+              Alert.alert("Error", errorMessage);
             } finally {
               setIsLoading(false);
             }
@@ -242,7 +253,7 @@ const AdminDashboard = () => {
       const token = await AsyncStorage.getItem("authToken");
       const response = await axios.get(
         "http://localhost:8080/api/medicamentos",
-         {headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (response.data.error) {
@@ -305,7 +316,7 @@ const AdminDashboard = () => {
     try {
       setIsLoading(true);
       const token = await AsyncStorage.getItem("authToken");
-      console.log(nuevoMedicamento)
+      console.log(nuevoMedicamento);
       const response = await axios.post(
         "http://localhost:8080/api/medicamentos",
         nuevoMedicamento,
@@ -553,6 +564,7 @@ const AdminDashboard = () => {
                     correo: paciente.correo,
                     telefono: paciente.telefono || "No especificado",
                     rol: "Paciente",
+                    activo: paciente.activo,
                   }}
                   onDelete={() =>
                     eliminarUsuario(paciente.idUsuario, "paciente")
@@ -584,7 +596,9 @@ const AdminDashboard = () => {
                     rol: medico.especialidad
                       ? `Médico (${medico.especialidad})`
                       : "Médico",
+                    activo: medico.activo
                   }}
+                    
                   onDelete={() => eliminarUsuario(medico.idUsuario, "medico")}
                   loading={isLoading}
                 />
