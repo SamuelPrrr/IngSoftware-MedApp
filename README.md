@@ -31,6 +31,10 @@ Proyecto desarrollado por: **Ángel Samuel Palomares Ríos**
 * Web API RESTful
 * Autenticación JWT
 
+### Nota:
+
+*Este repositorio solo tiene el codigo del Front, para el codigo del backend lo pueden encontrar en: [MedApp-Backend](https://github.com/SamuelPrrr/IngSoftware-Back-MedApp)
+
 ### Base de Datos:
 
 * [MySQL]
