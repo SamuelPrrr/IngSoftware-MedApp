@@ -37,7 +37,7 @@ Proyecto desarrollado por: **Ángel Samuel Palomares Ríos**
 
 ### Base de Datos:
 
-* [MySQL]
+* MySQL
 
 ### Herramientas y Recursos:
 
