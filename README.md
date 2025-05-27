@@ -27,17 +27,16 @@ Proyecto desarrollado por: **Ángel Samuel Palomares Ríos**
 
 ### Backend:
 
-* [C# con .NET 6](https://dotnet.microsoft.com/en-us/)
+* [Springboot con Maven](https://spring.io/)
 * Web API RESTful
 * Autenticación JWT
 
 ### Base de Datos:
 
-* [SQL Server](https://www.microsoft.com/sql-server)
+* [MySQL]
 
 ### Herramientas y Recursos:
 
-* Visual Studio 2022
 * Visual Studio Code
 * Postman (para pruebas de APIs)
 * Figma (para diseño de interfaces)
@@ -53,9 +52,7 @@ Organizado por módulos y semanas:
 * Semana 3-4: Registro, login y autenticación (JWT)
 * Semana 5-6: Módulo de citas (CRUD completo)
 * Semana 7: Fichas médicas automáticas
-* Semana 8: Notificaciones por correo
-* Semana 9: Generación de reportes PDF
-* Semana 10: Panel de control y pruebas de sistema
+* Semana 8: Panel de control y pruebas de sistema
 
 ---
 
@@ -75,27 +72,14 @@ Organizado por módulos y semanas:
 ## 🚨 Posibles Mejoras Futuras
 
 * Implementación de chat paciente-médico
-* Modo oscuro en la aplicación
+* Detalles en visualización
+* Mejorar el dashboard
 * Integración con Google Calendar
 * Soporte multilenguaje
 * Inteligencia artificial para sugerir horarios de citas
 
 ---
 
-## 🎮 Demo (opcional)
-
-*Si tienes una versión alojada o un video demo, puedes colocar el enlace aquí.*
-
----
-
-## 🚜 Clona este repositorio
-
-```bash
-https://github.com/tu-usuario/medapp.git
-```
-
----
-
 Gracias por visitar este proyecto. Si tienes dudas, sugerencias o quieres colaborar, puedes contactarme vía GitHub.
 
-*Desarrollado con pasión por Ángel Samuel Palomares Ríos* ✨
+*Desarrollado por Ángel Samuel Palomares Ríos* 🤓
