@@ -1,50 +1,101 @@
-# Welcome to your Expo app 👋
+# MedApp - Sistema de Gestión de Citas Médicas
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Proyecto desarrollado por: **Ángel Samuel Palomares Ríos**
 
-## Get started
+---
 
-1. Install dependencies
+## 🚀 Descripción
 
-   ```bash
-   npm install
-   ```
+**MedApp** es una plataforma digital que permite a pacientes, médicos y personal administrativo gestionar citas médicas de manera eficiente y segura. Incluye funciones como:
 
-2. Start the app
+* Registro e inicio de sesión para usuarios.
+* Agendamiento, modificación y cancelación de citas.
+* Generación de fichas médicas automáticas.
+* Notificaciones por correo electrónico y app móvil.
+* Panel de control administrativo.
+* Generación de reportes PDF.
 
-   ```bash
-    npx expo start
-   ```
+---
 
-In the output, you'll find options to open the app in a
+## 🤖 Tecnologías Utilizadas
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### Frontend:
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+* [React Native](https://reactnative.dev/) con [Expo](https://expo.dev/)
+* Navegación con React Navigation
+* Axios para consumo de APIs
 
-## Get a fresh project
+### Backend:
 
-When you're ready, run:
+* [C# con .NET 6](https://dotnet.microsoft.com/en-us/)
+* Web API RESTful
+* Autenticación JWT
+
+### Base de Datos:
+
+* [SQL Server](https://www.microsoft.com/sql-server)
+
+### Herramientas y Recursos:
+
+* Visual Studio 2022
+* Visual Studio Code
+* Postman (para pruebas de APIs)
+* Figma (para diseño de interfaces)
+* Git y GitHub (control de versiones)
+
+---
+
+## 📆 Planeación del Proyecto
+
+Organizado por módulos y semanas:
+
+* Semana 1-2: Análisis de requisitos y diseño de interfaces (Figma)
+* Semana 3-4: Registro, login y autenticación (JWT)
+* Semana 5-6: Módulo de citas (CRUD completo)
+* Semana 7: Fichas médicas automáticas
+* Semana 8: Notificaciones por correo
+* Semana 9: Generación de reportes PDF
+* Semana 10: Panel de control y pruebas de sistema
+
+---
+
+## 🎓 Lo que Aprendí
+
+* Implementación de una API REST desde cero con C# y .NET
+* Integración de React Native con un backend personalizado
+* Manejo de autenticación segura con JWT
+* Generación de archivos PDF desde el backend
+* Validación de formularios y manejo de errores
+* Diseño centrado en el usuario (UI/UX)
+* Trabajo organizado por módulos y sprints semanales
+* Documentación técnica y planeación de pruebas
+
+---
+
+## 🚨 Posibles Mejoras Futuras
+
+* Implementación de chat paciente-médico
+* Modo oscuro en la aplicación
+* Integración con Google Calendar
+* Soporte multilenguaje
+* Inteligencia artificial para sugerir horarios de citas
+
+---
+
+## 🎮 Demo (opcional)
+
+*Si tienes una versión alojada o un video demo, puedes colocar el enlace aquí.*
+
+---
+
+## 🚜 Clona este repositorio
 
 ```bash
-npm run reset-project
+https://github.com/tu-usuario/medapp.git
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-## Learn more
+Gracias por visitar este proyecto. Si tienes dudas, sugerencias o quieres colaborar, puedes contactarme vía GitHub.
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+*Desarrollado con pasión por Ángel Samuel Palomares Ríos* ✨
