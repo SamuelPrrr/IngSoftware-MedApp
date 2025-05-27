@@ -86,4 +86,4 @@ Organizado por módulos y semanas:
 
 Gracias por visitar este proyecto. Si tienes dudas, sugerencias o quieres colaborar, puedes contactarme vía GitHub.
 
-*Desarrollado por Ángel Samuel Palomares Ríos* 🤓
+*Desarrollado por Samuel Palomares* 🤓
